@@ -10,34 +10,18 @@
 #
 # Parameter file parser
 #
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.15)
 project(WhiskerTrackingParameterParser)
-include(FindBISON)
-
-#set(BISON_FOUND FALSE)
-if(NOT BISON_FOUND)
-    message("Bison not found.  Using previously generated parameter parser.")
-    set(PARAM_MODULE
-        ${CMAKE_CURRENT_LIST_DIR}/../generated/parameters/param.h
-        ${CMAKE_CURRENT_LIST_DIR}/../generated/param.tab.c
-        ${CMAKE_CURRENT_LIST_DIR}/../generated/param.tab.h
-        PARENT_SCOPE
-    )
-    include_directories(${CMAKE_CURRENT_LIST_DIR})
-    add_custom_target(ParameterParser DEPENDS ${PARAM_MODULE})
-    return()
-endif()
-
 
 BISON_TARGET(
   SCHEMA
-    schema.y
-    "${CMAKE_CURRENT_BINARY_DIR}/schema.tab.c"
-  VERBOSE
+  schema.y
+  "${CMAKE_CURRENT_BINARY_DIR}/schema.tab.c"
+  VERBOSE REPORT_FILE
     schema.grammer
   COMPILE_FLAGS "-t")
 #message("BISON_SCHEMA_OUTPUTS is ${BISON_SCHEMA_OUTPUTS}")
-add_executable(schema ${BISON_SCHEMA_OUTPUTS})
+add_executable(schema ${BISON_SCHEMA_OUTPUT_SOURCE})
 
 set(PARAM_PARSER_SRC
     ${CMAKE_CURRENT_BINARY_DIR}/param.y
@@ -50,40 +34,37 @@ add_custom_command(
     #${CMAKE_CURRENT_BINARY_DIR}/schema ${CMAKE_CURRENT_SOURCE_DIR}/parameters.schema param.y param.h
     schema ${CMAKE_CURRENT_SOURCE_DIR}/parameters.schema param.y param.h
   DEPENDS
-    schema.y
+    schema
     parameters.schema
-	WORKING_DIRECTORY
-		${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY
+    ${CMAKE_CURRENT_BINARY_DIR}
   )
 BISON_TARGET(
   PARAM
   ${CMAKE_CURRENT_BINARY_DIR}/param.y
   ${CMAKE_CURRENT_BINARY_DIR}/param.tab.c
-  VERBOSE
+  VERBOSE REPORT_FILE
     param.grammer
   COMPILE_FLAGS "-t")
 #message("BISON_PARAM_OUTPUTS is ${BISON_PARAM_OUTPUTS}")
-set(PARAM_SRCS ${CMAKE_CURRENT_BINARY_DIR}/param.tab.c)
+set(PARAM_SRCS ${BISON_PARAM_OUTPUT_SOURCE})
 #message(":: PARAM_SRCS is ${PARAM_SRCS}")
-set(PARAM_HDRS   ${CMAKE_CURRENT_BINARY_DIR}/param.h)
+set(PARAM_HDRS ${PARAM_PARSER_SRC} ${BISON_PARAM_OUTPUT_HEADER})
 #message(":: PARAM_HDRS is ${PARAM_HDRS}")
 set(PARAM_MODULE
-    ${CMAKE_CURRENT_SOURCE_DIR}/schema.y
-    ${CMAKE_CURRENT_SOURCE_DIR}/parameters.schema
     ${PARAM_SRCS}
     ${PARAM_HDRS}
     PARENT_SCOPE
 )
 source_group("Source Files\\Parameters" FILES ${PARAM_MODULE})
 
-add_custom_target(ParameterParser DEPENDS ${PARAM_SRCS} ${PARAM_HDRS})
+add_custom_target(ParameterParser DEPENDS ${PARAM_SRCS} ${PARAM_HDRS} ${PARAM_PARSER_SRC})
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_executable(validate
-  validate.c
-  ${PARAM_PARSER_SRC}
-	${BISON_PARAM_OUTPUTS}
-  )
+    validate.c
+    ${PARAM_PARSER_SRC}
+)
 add_dependencies(validate
     schema
     ParameterParser

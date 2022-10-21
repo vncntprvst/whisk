@@ -6,7 +6,7 @@
 ## Use is subject to Janelia Farm Research Campus Software Copyright 1.1
 ## license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
 ##
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.15)
 project(whisk)
 set(WHISK_VERSION_MAJOR 1)  # increment for total rewrites
 set(WHISK_VERSION_MINOR 1)  # increment for file format or architectural changes to side packages
@@ -93,8 +93,23 @@ source_group("Mylib\\Header Files" FILES ${MYLIB_HDRS})
 source_group("Mylib\\Awk"          FILES ${MANAGER})
 
 # parameter parsing
-add_subdirectory(src/parameters)
-set_source_files_properties(${PARAM_MODULE} PROPERTIES GENERATED 1)
+include(FindBISON)
+if(BISON_VERSION VERSION_GREATER_EQUAL 3.1.0)
+  message("Bison version ${BISON_VERSION} found which won't work, using pre-generated sources")
+  set(BISON_FOUND FALSE)
+endif()
+
+if(NOT BISON_FOUND)
+  add_subdirectory(src/generated src/parameters)
+  configure_file(src/generated/schema.tab.c ${PROJECT_BINARY_DIR}/src/parameters/schema.tab.c COPYONLY)
+  configure_file(src/generated/schema.tab.h ${PROJECT_BINARY_DIR}/src/parameters/schema.tab.h COPYONLY)
+  configure_file(src/generated/param.tab.c ${PROJECT_BINARY_DIR}/src/parameters/param.tab.c COPYONLY)
+  configure_file(src/generated/param.tab.h ${PROJECT_BINARY_DIR}/src/parameters/param.tab.h COPYONLY)
+  configure_file(src/generated/parameters/param.h ${PROJECT_BINARY_DIR}/src/parameters/param.h COPYONLY)
+else()
+  add_subdirectory(src/parameters)
+  set_source_files_properties(${PARAM_MODULE} PROPERTIES GENERATED 1)
+endif()
 source_group("Source Files\\Parameters" FILES ${PARAM_MODULE})
 
 #
@@ -149,7 +164,6 @@ set(COMMON
   )
 source_group("Source Files\\Common" FILES ${COMMON_SRCS})
 source_group("Header Files\\Common" FILES ${COMMON_HDRS})
-source_group("Parameter File Parser" FILES ${BISON_PARAM_OUTPUTS})
 
 # Whisker IO
 set(WHISKER_IO_SRCS
@@ -833,12 +847,14 @@ add_dependencies(test_measurementsio_repeated_read_writes ParameterParser)
 # INSTALL
 #
 if(WIN32)
+  set(DEST_INCLUDE "include")
   set(DEST_BIN    "bin")
   set(DEST_LIB    "lib")
   set(DEST_UI     ".")
   set(DEST_MATLAB ".")
   set(DEST_PYTHON ".")
 else()
+  set(DEST_INCLUDE "include/whisk")
   set(DEST_BIN "bin/whisk")
   set(DEST_LIB "lib/whisk")
   set(DEST_UI  "bin/whisk")
@@ -956,6 +972,26 @@ install(PROGRAMS
     ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
     DESTINATION "${DEST_UI}/bin"
     COMPONENT GUI)
+
+install(FILES
+    ${MYLIB_HDRS}
+    ${COMMON_HDRS}
+    ${WHISKER_IO_HDRS}
+    ${MEASUREMENTS_IO_HDRS}
+    ${BAR_IO_HDRS}
+    ${VIDEO_IO_HDRS}
+    ${MATH_HDRS}
+    ${TRACE_HDRS}
+    ${TRAJ_HDRS}
+    ${HMM_HDRS}
+    ${CMAKE_CURRENT_BINARY_DIR}/config.h
+    DESTINATION ${DEST_INCLUDE}
+    COMPONENT headers)
+install (FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/src/parameters/param.h
+    DESTINATION ${DEST_INCLUDE}/parameters
+    COMPONENT headers)
+
 #Use bundleutilities to get other dependencies
 if(APPLE)
     install(CODE "
