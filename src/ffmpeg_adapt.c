@@ -117,7 +117,7 @@ ffmpeg_video *ffmpeg_video_quit( ffmpeg_video *cur )
   if( cur->pDat ) av_free( cur->pDat );
 
   if( cur->pCtx ) avcodec_close( cur->pCtx );
-  if( cur->pFormatCtx ) av_close_input_file( cur->pFormatCtx );
+  if( cur->pFormatCtx ) avformat_close_input( cur->pFormatCtx );
 
   if(cur->rawimage) av_free(cur->rawimage);
   if(cur->buffer)   av_free(cur->buffer);
@@ -160,8 +160,8 @@ ffmpeg_video *ffmpeg_video_init(const char *fname, int format )
   ret->numFrames = DURATION(ret); //(int)(( ret->pFormatCtx->duration / (double)AV_TIME_BASE ) * ret->pCtx->time_base.den );
 
   /* Get framebuffers */
-  TRY(ret->pRaw = avcodec_alloc_frame());
-  TRY(ret->pDat = avcodec_alloc_frame());
+  TRY(ret->pRaw = av_frame_alloc());
+  TRY(ret->pDat = av_frame_alloc());
 
   /* Create data buffer */
   ret->numBytes = avpicture_get_size( ret->format, ret->pCtx->width, ret->pCtx->height );
@@ -229,11 +229,11 @@ int ffmpeg_video_next( ffmpeg_video *cur, int target )
       continue;
     }    
     AVTRY(avcodec_decode_video2( cur->pCtx, cur->pRaw, &finished, &packet ),NULL); 
-    if(cur->pCtx->codec_id==CODEC_ID_RAWVIDEO && !finished)
+    if(cur->pCtx->codec_id==AV_CODEC_ID_RAWVIDEO && !finished)
     { avpicture_fill( (AVPicture * ) cur->pRaw, cur->blank, cur->pCtx->pix_fmt,cur->width, cur->height ); // set to blank frame 
       finished=1;
     }
-#if 1 // very useful for debugging
+#if 0 // very useful for debugging
     printf("Packet - pts:%5d dts:%5d (%5d) - flag: %1d - finished: %3d - Frame pts:%5d %5d\n",
         (int)packet.pts,(int)packet.dts,target,
         packet.flags,finished,
@@ -307,13 +307,13 @@ void ffmpeg_video_debug_ppm( ffmpeg_video *cur, char *file )
     return;
 
   /* PPM header */
-  fprintf( out, "P%d\n%d %d\n255\n", cur->format == PIX_FMT_GRAY8? 5: 6, 
+  fprintf( out, "P%d\n%d %d\n255\n", cur->format == AV_PIX_FMT_GRAY8? 5: 6, 
       cur->width, cur->height );
 
   /* Spit out raw data */
   for( i = 0; i < cur->height; i++ )
     fwrite( cur->pDat->data[0] + i * cur->pDat->linesize[0], 1,
-        cur->width * ( cur->format == PIX_FMT_GRAY8? 1: 3 ), out );
+        cur->width * ( cur->format == AV_PIX_FMT_GRAY8? 1: 3 ), out );
 
   fclose( out );
 }
@@ -335,7 +335,7 @@ int _handle_open_status(const char *filename, void *c)
 
 SHARED_EXPORT void *FFMPEG_Open(const char* filename)
 { void *ctx = NULL;
-  ctx = ffmpeg_video_init(filename,PIX_FMT_GRAY8);
+  ctx = ffmpeg_video_init(filename,AV_PIX_FMT_GRAY8);
   if(!_handle_open_status(filename,ctx))
     return NULL;
   return ctx; // NULL on error
@@ -366,7 +366,7 @@ SHARED_EXPORT unsigned int  FFMPEG_Frame_Count(void* ctx)
 //--- UI2.PY interface
 
 int FFMPEG_Get_Stack_Dimensions(char *filename, int *width, int *height, int *depth, int *kind)
-{ ffmpeg_video *ctx = ffmpeg_video_init(filename,PIX_FMT_GRAY8); 
+{ ffmpeg_video *ctx = ffmpeg_video_init(filename,AV_PIX_FMT_GRAY8); 
   if(!_handle_open_status(filename,ctx))
     return 0;
   *width = ctx->width;
@@ -380,7 +380,7 @@ int FFMPEG_Get_Stack_Dimensions(char *filename, int *width, int *height, int *de
 // This involves an unneccesary copy.
 int FFMPEG_Read_Stack_Into_Buffer(char *filename, unsigned char *buf)
 { ffmpeg_video *ctx;
-  TRY(ctx=ffmpeg_video_init(filename,PIX_FMT_GRAY8));  
+  TRY(ctx=ffmpeg_video_init(filename,AV_PIX_FMT_GRAY8));  
   { int planestride = ffmpeg_video_bytes_per_frame(ctx);
     int i;
     for(i=0;i<ctx->numFrames;++i)

@@ -40,7 +40,16 @@ set(CMAKE_VERBOSE_MAKEFILE 0)
 #
 set(ROOT_3RDPARTY_DIR ${CMAKE_SOURCE_DIR}/3rdParty)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ROOT_3RDPARTY_DIR})
-find_package(FFMPEG)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FFMPEG IMPORTED_TARGET
+  libavdevice
+  libavfilter
+  libavformat
+  libavcodec
+  libswresample
+  libswscale
+  libavutil
+)
 set(HAVE_FFMPEG 0)
 if(FFMPEG_FOUND)
   set(HAVE_FFMPEG 1)
@@ -367,7 +376,7 @@ add_library(whisk MODULE #SHARED
   ${TRAJ}
   ${HMM}
 )
-target_link_libraries(whisk ${FFMPEG_LIBRARIES} ${LIBM})
+target_link_libraries(whisk PkgConfig::FFMPEG ${LIBM})
 add_dependencies(whisk ParameterParser)
 
 add_library(traj MODULE #SHARED
@@ -395,7 +404,7 @@ add_library(whiskio MODULE #STATIC
   ${BAR_IO}
   ${FFMPEG_INCLUDE_DIRS}
 )
-target_link_libraries(whiskio ${FFMPEG_LIBRARIES} ${LIBM})
+target_link_libraries(whiskio PkgConfig::FFMPEG ${LIBM})
 add_dependencies(whiskio ParameterParser) #still need param.h
 set_target_properties(whiskio PROPERTIES
   COMPILE_DEFINITIONS SKIP_PARAMS_FILE
@@ -490,7 +499,7 @@ if(QT_FOUND)
     ${HMM}
     )
   target_link_libraries(whiski ${QT_LIBRARIES})
-  target_link_libraries(whiski ${FFMPEG_LIBRARIES} ${LIBM})
+  target_link_libraries(whiski PkgConfig::FFMPEG ${LIBM})
   add_dependencies(whiski ParameterParser)
   set_property(TARGET whiski PROPERTY
       MACOSX_BUNDLE_ICON_FILE whiski.icns)
@@ -521,7 +530,7 @@ add_executable(trace
   ${PARAM_MODULE}
   ${FFMPEG_INCLUDE_DIRS}
 )
-target_link_libraries(trace ${FFMPEG_LIBRARIES} ${LIBM})
+target_link_libraries(trace PkgConfig::FFMPEG ${LIBM})
 add_dependencies(trace ParameterParser)
 
 #measure
@@ -645,7 +654,7 @@ add_executable(preprocess
   ${PARAM_MODULE}
 )
 add_dependencies(preprocess ParameterParser)
-target_link_libraries(preprocess ${FFMPEG_LIBRARIES} ${LIBM})
+target_link_libraries(preprocess PkgConfig::FFMPEG ${LIBM})
 
 #totif
 add_executable(totif
@@ -662,7 +671,7 @@ set_target_properties(totif
     COMPILE_DEFINITIONS VID_TO_TIF
 )
 add_dependencies(totif ParameterParser)
-target_link_libraries(totif ${FFMPEG_LIBRARIES} ${LIBM})
+target_link_libraries(totif PkgConfig::FFMPEG ${LIBM})
 
 #vsplit
 add_executable(vsplit
@@ -679,7 +688,7 @@ set_target_properties(vsplit
     COMPILE_DEFINITIONS VIDSPLIT
 )
 add_dependencies(vsplit ParameterParser)
-target_link_libraries(vsplit ${FFMPEG_LIBRARIES} ${LIBM})
+target_link_libraries(vsplit PkgConfig::FFMPEG ${LIBM})
 
 #seedtest
 source_group("Source Files" FILES src/seedtest.c)
@@ -694,7 +703,7 @@ add_executable(seedtest
   ${PARAM_MODULE}
 )
 add_dependencies(seedtest ParameterParser)
-target_link_libraries(seedtest ${FFMPEG_LIBRARIES} ${LIBM})
+target_link_libraries(seedtest PkgConfig::FFMPEG ${LIBM})
 
 #stripetest
 source_group("Source Files" FILES src/stripetest.c)
@@ -709,7 +718,7 @@ add_executable(stripetest
   ${PARAM_MODULE}
 )
 add_dependencies(stripetest ParameterParser)
-target_link_libraries(stripetest ${FFMPEG_LIBRARIES} ${LIBM})
+target_link_libraries(stripetest PkgConfig::FFMPEG ${LIBM})
 
 #test_whisker_io
 source_group("Source Files" FILES src/test_whisker_io.c)
