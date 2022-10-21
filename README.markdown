@@ -1,3 +1,12 @@
+I only know for sure that this builds and runs on linux with ffmpeg <= 4.2.1 and bison <= 3.0.4
+I haven't tested any other operating systems
+I know that it stops working with newer versions of ffmpeg but not sure what version it stops working at
+to build:
+       mkdir build
+       cd build
+       cmake ..
+       make
+
 Whisker tracking
 ================
 
