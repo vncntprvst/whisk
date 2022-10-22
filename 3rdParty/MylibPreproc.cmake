@@ -16,13 +16,13 @@ macro(mylib_preprocess CFILES_OUT PFILES MANAGER)
     if(NOT AWK)
         message("awk not found.  Using previously generated mylib c files in ${CMAKE_CURRENT_LIST_DIR}/generated.")
         set(${CFILES_OUT}
-            ${CMAKE_CURRENT_LIST_DIR}/src/generated/contour_lib.c
-            ${CMAKE_CURRENT_LIST_DIR}/src/generated/draw_lib.c
-            ${CMAKE_CURRENT_LIST_DIR}/src/generated/image_filters.c
-            ${CMAKE_CURRENT_LIST_DIR}/src/generated/image_lib.c
-            ${CMAKE_CURRENT_LIST_DIR}/src/generated/level_set.c
-            ${CMAKE_CURRENT_LIST_DIR}/src/generated/utilities.c
-            ${CMAKE_CURRENT_LIST_DIR}/src/generated/water_shed.c
+            ${CMAKE_CURRENT_LIST_DIR}/src/generated/mylib/contour_lib.c
+            ${CMAKE_CURRENT_LIST_DIR}/src/generated/mylib/draw_lib.c
+            ${CMAKE_CURRENT_LIST_DIR}/src/generated/mylib/image_filters.c
+            ${CMAKE_CURRENT_LIST_DIR}/src/generated/mylib/image_lib.c
+            ${CMAKE_CURRENT_LIST_DIR}/src/generated/mylib/level_set.c
+            ${CMAKE_CURRENT_LIST_DIR}/src/generated/mylib/utilities.c
+            ${CMAKE_CURRENT_LIST_DIR}/src/generated/mylib/water_shed.c
         )
     else()
         set(${GENERATOR} "")
