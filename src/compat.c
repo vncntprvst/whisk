@@ -7,12 +7,9 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 #include "compat.h"
-
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES
 #include <math.h>
 
-extern  long int lround(float x)
+/*extern  long int lround(float x)
 {
 return (long)(x < 0 ? -floor(fabs(x) + .5) : floor(x + .5));
 }
@@ -25,6 +22,4 @@ extern  double round(double x)
 extern  float roundf(float x)
 {
   return x < 0 ? -floorf(fabsf(x) + .5) : floorf(x + .5);
-}
-
-#endif
+}*/
