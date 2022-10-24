@@ -94,7 +94,7 @@ source_group("Mylib\\Awk"          FILES ${MANAGER})
 
 # parameter parsing
 include(FindBISON)
-if(BISON_VERSION VERSION_GREATER_EQUAL 3.1.0)
+if(BISON_VERSION VERSION_GREATER_EQUAL 3.0.0)
   message("Bison version ${BISON_VERSION} found which won't work, using pre-generated sources")
   set(BISON_FOUND FALSE)
 endif()
