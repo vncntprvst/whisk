@@ -356,7 +356,7 @@ int FFMPEG_Get_Stack_Dimensions(char *filename, int *width, int *height, int *de
 }
 
 // This involves an unneccesary copy.
-/*int FFMPEG_Read_Stack_Into_Buffer(char *filename, unsigned char *buf)
+int FFMPEG_Read_Stack_Into_Buffer(char *filename, unsigned char *buf)
 { ffmpeg_video *ctx;
   TRY(ctx=ffmpeg_video_init(filename,AV_PIX_FMT_GRAY8));  
   { int planestride = ffmpeg_video_bytes_per_frame(ctx);
@@ -364,14 +364,14 @@ int FFMPEG_Get_Stack_Dimensions(char *filename, int *width, int *height, int *de
     for(i=0;i<ctx->numFrames;++i)
     { int sts;
       TRY(ffmpeg_video_next(ctx,i)==0);
-      memcpy(buf+i*planestride,ctx->buffer,planestride);
+      memcpy(buf+i*planestride,ctx->data[0],planestride);
     }
   }
   if(ctx) ffmpeg_video_quit(ctx);
   return 1;
 Error:
   return 0;
-}*/
+}
 
 
 #else // HAVE_FFMPEG not defined
@@ -389,7 +389,7 @@ SHARED_EXPORT unsigned int  FFMPEG_Frame_Count(void *context)            {_handl
 SHARED_EXPORT int FFMPEG_Get_Stack_Dimensions(char *filename, int *width, int *height, int *depth, int *kind)
 {_handle_ffmpeg_not_installed(); return 0;}
 
-/*SHARED_EXPORT int FFMPEG_Read_Stack_Into_Buffer(char *filename, unsigned char *buf)
-{_handle_ffmpeg_not_installed(); return 0;}*/
+SHARED_EXPORT int FFMPEG_Read_Stack_Into_Buffer(char *filename, unsigned char *buf)
+{_handle_ffmpeg_not_installed(); return 0;}
 
 #endif // if/else defined HAVE_FFMPEG
