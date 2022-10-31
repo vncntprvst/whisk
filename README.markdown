@@ -1,5 +1,3 @@
-I only know for sure that this builds and runs on linux, I haven't tested any other operating systems  
-
 build requirements on scc:
 
       module load cmake gcc/12.2.0 ffmpeg
