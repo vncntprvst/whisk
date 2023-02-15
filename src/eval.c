@@ -22,7 +22,7 @@
 #include "eval.h"
 #include "aip.h"
 #include "utilities.h"
-
+#include "error.h"
 
 
 #if 0

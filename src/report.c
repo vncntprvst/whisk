@@ -15,7 +15,7 @@
 #include "measurements_io.h"
 
 #include "parameters/param.h"
-     
+#include "error.h"
 
 #if 1
 #define DEBUG_REPORT_1
