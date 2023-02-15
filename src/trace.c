@@ -43,6 +43,7 @@
 #include "seed.h"
    
 #include "parameters/param.h"
+#include "error.h"
 
 #if 0
 #define DEBUG_READ_LINE_DETECTOR_BANK

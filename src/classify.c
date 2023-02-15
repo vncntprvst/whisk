@@ -14,6 +14,7 @@
 #include "utilities.h"
 #include "traj.h"
 #include "measurements_io.h"
+#include "error.h"
 
 #define DEBUG_CLASSIFY_1
 #define DEBUG_CLASSIFY_3
