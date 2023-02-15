@@ -121,7 +121,7 @@ static int Is_FFMPEG(const char *path)
 //
 // INTERNAL INTERFACE
 //
-typedef void*        (*pf_opener)( const char* ); 
+typedef void*        (*pf_opener)( char* ); 
 typedef void         (*pf_closer)( void* );       
 typedef Image*       (*pf_fetch) ( void*, int );       
 typedef unsigned int (*pf_get_nframes) (void* );
@@ -213,7 +213,7 @@ typedef struct _video_t
           void *fp;
 } video_t;
 
-video_t* video_open(const char *path)
+video_t* video_open(char *path)
 { video_t *self = 0;
   kind_t k = guess_format(path);
   if(!is_valid_kind(k))
