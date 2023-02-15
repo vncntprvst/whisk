@@ -395,7 +395,7 @@ static char *DF_ERROR = "Two instances of the same unit have different default v
 static void syntax_error(char *msg)
 { fprintf(stderr,"\nError in Process_Arguments:\n  %s\n",msg);
   fprintf(stderr,"\n        %s",Master_Spec[Specline]);  //  Has a terminal '\n'!
-  fprintf(stderr,"        %*s^\n",Scan-Specbeg,"");
+  fprintf(stderr,"        %*s^\n",(int)(Scan-Specbeg),"");
   exit (1);
 }
 

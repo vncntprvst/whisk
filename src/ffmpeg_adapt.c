@@ -77,7 +77,7 @@ typedef struct _ffmpeg_video
 {
    AVFormatContext *pFormatCtx;
    AVCodecContext *pCtx;
-   AVCodec *pCodec;
+   const AVCodec *pCodec;
    AVFrame *pRaw;
    AVFrame *pDat;
    uint8_t *data[AV_NUM_DATA_POINTERS];
@@ -110,8 +110,8 @@ void maybeInit()
 /* Close & Free cur video context
  * This function is also called on failed init, so check existence before de-init
  */
-ffmpeg_video *ffmpeg_video_quit( ffmpeg_video *cur )
-{ if(!cur) return;
+void *ffmpeg_video_quit( ffmpeg_video *cur )
+{ if(!cur) return NULL;
   if( cur->Sctx ) sws_freeContext( cur->Sctx );
 
   if( cur->pRaw ) av_frame_free( &cur->pRaw );
