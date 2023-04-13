@@ -54,6 +54,25 @@ pkg_check_modules(FFMPEG IMPORTED_TARGET
   libswscale
   libavutil
 )
+
+# # Override FFMPEG_INCLUDE_DIRS and INTERFACE_INCLUDE_DIRECTORIES if needed
+# message(":: Before FFMPEG_INCLUDE_DIRS: ${FFMPEG_INCLUDE_DIRS}")
+# set(FFMPEG_INCLUDE_DIRS "C:/Program Files/mysys2/mingw64/include")
+# message(":: After FFMPEG_INCLUDE_DIRS: ${FFMPEG_INCLUDE_DIRS}")
+
+# get_property(FFMPEG_OLD_INCLUDE_DIRS TARGET PkgConfig::FFMPEG PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+# message(":: FFMPEG_OLD_INCLUDE_DIRS: ${FFMPEG_OLD_INCLUDE_DIRS}")
+
+# set(FFMPEG_FIXED_INCLUDE_DIRS ${FFMPEG_OLD_INCLUDE_DIRS})
+# list(REMOVE_ITEM FFMPEG_FIXED_INCLUDE_DIRS "C:/Program")
+# list(APPEND FFMPEG_FIXED_INCLUDE_DIRS "C:/Program Files/mysys2/mingw64/include")
+
+# set_property(TARGET PkgConfig::FFMPEG PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${FFMPEG_FIXED_INCLUDE_DIRS}")
+# get_property(FFMPEG_NEW_INCLUDE_DIRS TARGET PkgConfig::FFMPEG PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+# message(":: FFMPEG_NEW_INCLUDE_DIRS: ${FFMPEG_NEW_INCLUDE_DIRS}")
+
+
+
 set(HAVE_FFMPEG 0)
 if(FFMPEG_FOUND)
   set(HAVE_FFMPEG 1)
@@ -379,6 +398,18 @@ endif()
 #
 # LIBS
 #
+# message(":: COMMON is ${COMMON}")
+# message(":: MYLIB is ${MYLIB}")
+# message(":: WHISKER_IO is ${WHISKER_IO}")
+# message(":: MEASUREMENTS_IO is ${MEASUREMENTS_IO}")
+# message(":: VIDEO_IO is ${VIDEO_IO}")
+# message(":: MATH is ${MATH}")
+# message(":: TRACE is ${TRACE}")
+# message(":: BAR_IO is ${BAR_IO}")
+# message(":: PARAM_MODULE is ${PARAM_MODULE}")
+# message(":: FFMPEG_INCLUDE_DIRS is ${FFMPEG_INCLUDE_DIRS}")
+# message(":: TRAJ is ${TRAJ}")
+# message(":: HMM is ${HMM}")
 
 add_library(whisk MODULE #SHARED
   ${COMMON}
