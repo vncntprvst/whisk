@@ -55,7 +55,13 @@ set(PARAM_MODULE
     ${PARAM_SRCS}
     ${PARAM_HDRS}
     PARENT_SCOPE
+    # Comment PARENT_SCOPE to make PARAM_MODULE not empty
 )
+
+# message(":: PARAM_MODULE is ${PARAM_MODULE}")
+# message(":: PARAM_SRCS is ${PARAM_SRCS}")
+# message(":: PARAM_HDRS is ${PARAM_HDRS}")
+
 source_group("Source Files\\Parameters" FILES ${PARAM_MODULE})
 
 add_custom_target(ParameterParser DEPENDS ${PARAM_SRCS} ${PARAM_HDRS} ${PARAM_PARSER_SRC})
