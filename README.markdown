@@ -61,6 +61,14 @@ GUI will show available options.  See the CMake documentation for more details.
 
 [Cmake]: http://www.cmake.org
 
+**QT GUI**
+Install [Qt5](https://www.qt.io/download). Choose the open-source version.
+
+Set the Qt5_DIR environment variable: 
+After installing Qt, you need to set an environment variable called Qt5_DIR that points to the appropriate Qt version's cmake directory. 
+For example: `Qt5_DIR=C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5`
+Replace with the path where you installed Qt, the version of Qt you installed (e.g., 5.15.2), and the appropriate compiler (e.g., mingw81_64).
+
 
 File formats
 ============

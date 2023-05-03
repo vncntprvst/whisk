@@ -352,40 +352,43 @@ source_group("Header Files\\" FILES ${HMM_HDRS})
 
 # QTUI
 SET(QTLIBLIST
-  QtMain
-  QtGui
-  QtCore
-  QtOpenGL
-  QtSvg
+  Widgets
+  Gui
+  Core
+  OpenGL
+  Svg
 )
-if(WIN32) #this is a bit specific to me...should use imported targets if you build qt yourself
-set(QT_USE_IMPORTED_TARGETS TRUE)
-endif()
-find_package(Qt4 4.7 COMPONENTS ${QTLIBLIST})
+
+find_package(Qt5 COMPONENTS ${QTLIBLIST} REQUIRED)
+
 set(QTUI_HDRS)
 set(QTUI_SRCS)
 set(QTUI_SUBDIR qtui)
-if(QT_FOUND)
-  include(${QT_USE_FILE})
-  include_directories(${QT_INCLUDE_DIRS})
-  file(GLOB QTUI_HDRS ${CMAKE_SOURCE_DIR}/${QTUI_SUBDIR}/*.h)
-  file(GLOB QTUI_SRCS ${CMAKE_SOURCE_DIR}/${QTUI_SUBDIR}/*.cpp)
-  source_group("Source Files\\ui" FILES ${QTUI_SRCS})
-  source_group("Header Files\\ui" FILES ${QTUI_HDRS})
 
-  qt4_wrap_cpp(MOC_SRCS
-    qtui/MainWindow.h
-    qtui/Editor.h
-    qtui/Data.h
-    qtui/Curve.h
-    qtui/FaceIndicator.h
-  )
-  qt4_add_resources(RCC_SRCS qtui/qtui.qrc)
-  source_group("Source Files\\Qt Generated" FILES
-    ${MOC_SRCS}
-    ${RCC_SRCS}
-  )
-endif()
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+include_directories(${Qt5_INCLUDE_DIRS})
+file(GLOB QTUI_HDRS ${CMAKE_SOURCE_DIR}/${QTUI_SUBDIR}/*.h)
+file(GLOB QTUI_SRCS ${CMAKE_SOURCE_DIR}/${QTUI_SUBDIR}/*.cpp)
+source_group("Source Files\\ui" FILES ${QTUI_SRCS})
+source_group("Header Files\\ui" FILES ${QTUI_HDRS})
+
+qt5_wrap_cpp(MOC_SRCS
+  qtui/MainWindow.h
+  qtui/Editor.h
+  qtui/Data.h
+  qtui/Curve.h
+  qtui/FaceIndicator.h
+)
+
+qt5_add_resources(RCC_SRCS qtui/qtui.qrc)
+
+source_group("Source Files\\Qt Generated" FILES
+  ${MOC_SRCS}
+  ${RCC_SRCS}
+)
+
 
 ###########
 # TARGETS #
