@@ -34,6 +34,7 @@ For Unix-y systems:
     cmake ..
     make
 ```
+If cmake fails because of it can't find ffmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil', you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/jovyan/ffmpeg_build/lib/pkgconfig`.
 
 For Windows systems (ignore VS Code instructions if not using it):
 
