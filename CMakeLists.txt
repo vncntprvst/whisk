@@ -16,7 +16,11 @@ macro(show v)
   message("${v} is ${${v}}")
 endmacro()
 
-#show(CMAKE_C_FLAGS)
+# Adding the -fPIC flag, to ensure that the object files are compiled as position-independent code, which is required for shared library creation. 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC") 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC") 
+
+show(CMAKE_C_FLAGS)
 #show(CMAKE_SHARED_LIBRARY_C_FLAGS)
 #show(CMAKE_SHARED_LIBRARY_CXX_FLAGS)
 #show(CMAKE_SHARED_LIBRARY_CXX_FLAGS)
@@ -447,8 +451,19 @@ add_dependencies(whiskio_static ParameterParser)
 # MATLAB
 #
 
-  find_package(Matlab-rwp) #optional
+  set(MATLAB_ROOT "/usr/local/MATLAB/R2021b")
+
+  set(MATLAB_LIBS_DIRECTORY ${MATLAB_ROOT}/bin/glnxa64)  
+
+  # message(STATUS "MATLAB_LIBS_DIRECTORY: ${MATLAB_LIBS_DIRECTORY}")
+
+  set(MATLAB_MAT_LIBRARY ${MATLAB_ROOT}/bin/glnxa64/libmat.so)
+  set(MATLAB_MEX_LIB ${MATLAB_ROOT}/bin/glnxa64/libmex.so)
+
+  find_package(Matlab-rwp)
   include(MatlabMexMacro)
+
+  message(STATUS "MATLAB_FOUND: ${MATLAB_FOUND}")
 
   if(MATLAB_FOUND)
     add_mex_file(mexLoadMeasurements matlab/src/measurements_io.mex.c)

@@ -23,18 +23,29 @@ The build requirements are `cmake` `gcc-12.2+` `ffmpeg`.
 
 For Unix-y systems:
 
-1. Install CMake 2.8 or better.
-2. Install bison if it's not already available on your system.
-3. Install awk. 
-4. Start in the root of the source directory (in a terminal).
-6. Type these commands:
+1. Install CMake 2.8+, a C++ compiler and other build tools.
+```
+sudo apt update
+sudo cmake pkg-config bison gawk
+sudo apt install g++ gdb make ninja-build rsync zip
+```
+2. Install ffmpeg libraries
+```
+sudo apt install libavdevice-dev libavfilter-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
+```
+If cmake still fails because of it can't find ffmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil`, you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/jovyan/ffmpeg_build/lib/pkgconfig`.
+
+3. Start in the root of the source directory (in a terminal).
+6. Type these commands (or use VSCode CMake extension to configure and build):
 ```
     mkdir build
     cd build
     cmake ..
     make
 ```
-If cmake fails because of it can't find ffmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil`, you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/jovyan/ffmpeg_build/lib/pkgconfig`.
+
+For WSL systems, this page may be helpful:
+https://devblogs.microsoft.com/cppblog/build-and-debug-c-with-wsl-2-distributions-and-visual-studio-2022/
 
 For Windows systems (ignore VS Code instructions if not using it):
 
