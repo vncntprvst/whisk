@@ -36,7 +36,7 @@ sudo apt install libavdevice-dev libavfilter-dev libavformat-dev libavcodec-dev 
 If cmake still fails because of it can't find ffmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil`, you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/jovyan/ffmpeg_build/lib/pkgconfig`.
 
 3. Start in the root of the source directory (in a terminal).
-6. Type these commands (or use VSCode CMake extension to configure and build):
+6. Type these commands (or use [VSCode's CMake extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools) to configure and build):
 ```
     mkdir build
     cd build
