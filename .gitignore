@@ -7,3 +7,6 @@ ui/trace.py
 ui/traj.py
 build
 xcode
+
+# Do not exclude the *.so files in the bin directory
+!bin/*.so
