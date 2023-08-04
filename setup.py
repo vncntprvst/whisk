@@ -13,7 +13,8 @@ with open('README.md', 'r') as f:
 setup(
     name='whisk-janelia',
     version='1.1.2',
-    author=', '.join(['clackn','cxrodgers','mitchclough','vncntprvst']),
+    author='Nathan Clack',
+    maintainer=', '.join(['clackn','cxrodgers','mitchclough','vncntprvst']),
     url='https://github.com/nclack/whisk/',
     license='LICENSE.txt',
     description='Fully automated tracking of single rows of whiskers in high-speed video.',
