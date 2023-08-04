@@ -1,20 +1,14 @@
 Janelia Whisker tracking
 ========================
 Fully automated tracking of single rows of whiskers in high-speed video.  
+
 The original source code repository is https://github.com/nclack/whisk/.    
 The [associated website](http://openwiki.janelia.org/wiki/display/MyersLab/Whisker+Tracking) for this program is not accessible anymore outside of Janelia. 
 A copy of the instructions and the tutorial are available [here](https://github.com/wanglab-neuro/whisk-dockerfile/tree/main/context/wiki).
 
-Community
-=========
-
-[Chat](https://discord.gg/Y7QJerr)
-
-[Issue Tracker](https://github.com/nclack/whisk/issues)
-
 Downloading
 ===========
-Pre-built binaries are available on [this forked repository](https://github.com/vncntprvst/whisk/tree/master/bin).  
+Pre-built binaries are available on [this forked repository](https://github.com/vncntprvst/whisk/tree/master/whisk/bin).  
 Binary and library file can simply be installed from Pypi, with `pip install whisk-janelia`.  
 See also the [README on the whisk-dockerfile repo](https://github.com/wanglab-neuro/whisk-dockerfile), in `whisk-base` section.  
 
@@ -100,3 +94,11 @@ Graphical interface
 See ui/README for instructions on how to use the graphical user interface.
 
       ui2.py --help
+
+Community
+=========
+
+[Chat](https://discord.gg/Y7QJerr)
+
+[Issue Tracker](https://github.com/nclack/whisk/issues)
+
