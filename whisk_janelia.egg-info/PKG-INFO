@@ -3,31 +3,29 @@ Name: whisk-janelia
 Version: 1.1.2
 Summary: Fully automated tracking of single rows of whiskers in high-speed video.
 Home-page: https://github.com/nclack/whisk/
-Author: clackn, cxrodgers, mitchclough, vncntprvst
+Author: Nathan Clack
+Maintainer: clackn, cxrodgers, mitchclough, vncntprvst
 License: LICENSE.txt
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
 
-Whisker tracking
-================
+Janelia Whisker tracking
+========================
+Fully automated tracking of single rows of whiskers in high-speed video.  
 
-The [original website](http://openwiki.janelia.org/wiki/display/MyersLab/Whisker+Tracking) for this program is defunct but a copy of the instructions and the tutorial are available [here](https://github.com/wanglab-neuro/whisk-dockerfile/tree/main/context/wiki).
-
-Community
-=========
-
-[Chat](https://discord.gg/Y7QJerr)
-
-[Issue Tracker](https://github.com/nclack/whisk/issues)
+The original source code repository is https://github.com/nclack/whisk/.    
+The [associated website](http://openwiki.janelia.org/wiki/display/MyersLab/Whisker+Tracking) for this program is not accessible anymore outside of Janelia. 
+A copy of the instructions and the tutorial are available [here](https://github.com/wanglab-neuro/whisk-dockerfile/tree/main/context/wiki).
 
 Downloading
 ===========
-
-A few pre-built binaries are available. See the [README on the whisk-dockerfile repo](https://github.com/wanglab-neuro/whisk-dockerfile), in `whisk-base` section.  
+Pre-built binaries are available on [this forked repository](https://github.com/vncntprvst/whisk/tree/master/whisk/bin).  
+Binary and library file can simply be installed from Pypi, with `pip install whisk-janelia`.  
+See also the [README on the whisk-dockerfile repo](https://github.com/wanglab-neuro/whisk-dockerfile), in `whisk-base` section.  
 
 Building
 ========
-
+Updated build files are found [here](https://github.com/vncntprvst/whisk/).  
 This package uses a [Cmake][] based build system.  The basic build steps are similar under Windows, OS X, and Linux.  
 The build requirements are `cmake` `gcc-12.2+` `ffmpeg`.
 
@@ -107,3 +105,11 @@ Graphical interface
 See ui/README for instructions on how to use the graphical user interface.
 
       ui2.py --help
+
+Community
+=========
+
+[Chat](https://discord.gg/Y7QJerr)
+
+[Issue Tracker](https://github.com/nclack/whisk/issues)
+
