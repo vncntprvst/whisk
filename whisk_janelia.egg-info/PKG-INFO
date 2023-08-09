@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: whisk-janelia
-Version: 1.1.2
+Version: 1.1.4
 Summary: Fully automated tracking of single rows of whiskers in high-speed video.
 Home-page: https://github.com/nclack/whisk/
 Author: Nathan Clack
