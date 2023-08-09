@@ -485,6 +485,17 @@ add_dependencies(whiskio_static ParameterParser)
 # MATLAB
 #
 
+# Check for the platform (Windows or Linux)
+if(WIN32)
+  # On Windows, your MATLAB path is:
+  set(MATLAB_ROOT "C:/Program Files/MATLAB/R2022b")
+  
+  set(MATLAB_LIBS_DIRECTORY ${MATLAB_ROOT}/bin/win64)  
+
+  set(MATLAB_MAT_LIBRARY ${MATLAB_LIBS_DIRECTORY}/libmat.dll)
+  set(MATLAB_MEX_LIB ${MATLAB_LIBS_DIRECTORY}/libmex.dll)
+else()
+  # Assuming Linux for other cases
   set(MATLAB_ROOT "/usr/local/MATLAB/R2021b")
 
   set(MATLAB_LIBS_DIRECTORY ${MATLAB_ROOT}/bin/glnxa64)  
@@ -493,6 +504,7 @@ add_dependencies(whiskio_static ParameterParser)
 
   set(MATLAB_MAT_LIBRARY ${MATLAB_ROOT}/bin/glnxa64/libmat.so)
   set(MATLAB_MEX_LIB ${MATLAB_ROOT}/bin/glnxa64/libmex.so)
+endif()
 
   find_package(Matlab-rwp)
   include(MatlabMexMacro)
