@@ -9,4 +9,4 @@ build
 xcode
 
 # Do not exclude the *.so files in the bin directory
-!bin/*.so
+!whisk/bin/*.so
