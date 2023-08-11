@@ -342,6 +342,8 @@ setup.py
 3rdParty/ffmpeg/ffmpeg-git-a4c22e3-win64-shared/presets/libx264-ipod640.ffpreset
 3rdParty/inttypes/inttypes.h
 3rdParty/inttypes/stdint.h
+dist/whisk-janelia-1.1.4.tar.gz
+dist/whisk_janelia-1.1.4-py3-none-any.whl
 docs/Makefile
 docs/make.bat
 docs/source/command-line-tools.rst
