@@ -414,7 +414,7 @@ source_group("Source Files\\Qt Generated" FILES
 # message(":: TRAJ is ${TRAJ}")
 # message(":: HMM is ${HMM}")
 
-add_library(whisk MODULE #SHARED
+add_library(whisk SHARED
   ${COMMON}
   ${MYLIB}
   ${WHISKER_IO}
@@ -430,8 +430,17 @@ add_library(whisk MODULE #SHARED
 )
 target_link_libraries(whisk PkgConfig::FFMPEG ${LIBM})
 add_dependencies(whisk ParameterParser)
+if (WIN32)
+  set_target_properties(whisk PROPERTIES
+    OUTPUT_NAME "whisk"
+    PREFIX ""
+    SUFFIX ".dll"
+  )
+else()
+    set_target_properties(whisk PROPERTIES OUTPUT_NAME "libwhisk")
+endif()
 
-add_library(traj MODULE #SHARED
+add_library(traj SHARED #MODULE
   ${COMMON}
   ${MYLIB}
   ${MEASUREMENTS_IO}
@@ -443,7 +452,7 @@ add_library(traj MODULE #SHARED
 add_dependencies(traj ParameterParser)
 target_link_libraries(traj ${LIBM})
 
-add_library(whiskio MODULE #STATIC
+add_library(whiskio MODULE #SHARED
   ${COMMON}
   ${PARAM_MODULE}
   ${MYLIB}
@@ -903,6 +912,16 @@ set_target_properties(test_measurementsio_repeated_read_writes
 )
 target_link_libraries(test_measurementsio_repeated_read_writes ${LIBM})
 add_dependencies(test_measurementsio_repeated_read_writes ParameterParser)
+
+if (WIN32)
+  set_target_properties(whisk PROPERTIES
+    OUTPUT_NAME "whisk"
+    PREFIX ""
+    SUFFIX ".dll"
+  )
+else()
+    set_target_properties(whisk PROPERTIES OUTPUT_NAME "libwhisk")
+endif()
 
 #
 # INSTALL
