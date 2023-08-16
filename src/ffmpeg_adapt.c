@@ -58,10 +58,10 @@
     { char buf[1024];                                   \
       av_strerror(v,buf,sizeof(buf));                 \
       if(msg) \
-        printf("%s(%d):"ENDL "%s"ENDL "%s"ENDL "FFMPEG: %s"ENDL,   \
+        fprintf(stderr, "%s(%d):"ENDL "%s"ENDL "%s"ENDL "FFMPEG: %s"ENDL,   \
             __FILE__,__LINE__,#expr,(char*)msg,buf);                 \
       else \
-        printf("%s(%d):"ENDL "%s"ENDL "FFMPEG Error: %s"ENDL,   \
+        fprintf(stderr, "%s(%d):"ENDL "%s"ENDL "FFMPEG Error: %s"ENDL,   \
             __FILE__,__LINE__,#expr,buf);                 \
       goto Error;                                         \
     }                                                   \
@@ -213,16 +213,49 @@ int ffmpeg_video_next( ffmpeg_video *cur, int target )
   AVPacket* packet = av_packet_alloc();
   do {
     AVTRY(av_read_frame(cur->pFormatCtx, packet), NULL);
-    if( packet->stream_index == cur->videoStream ) {
-      AVTRY(avcodec_send_packet(cur->pCtx, packet), NULL);
-      AVTRY(avcodec_receive_frame(cur->pCtx, cur->pRaw), NULL);
-#if 0 // very useful for debugging
-      printf("Packet - pts:%5d dts:%5d (%5d) - flag: %1d - finished: %3d - Frame pts:%5d %5d\n",
-          (int)packet.pts,(int)packet.dts,target,
-          packet.flags,finished,
-          (int)cur->pRaw->pts,(int)cur->pRaw->best_effort_timestamp);
-#endif
+    if (packet->stream_index == cur->videoStream) {
+        AVTRY(avcodec_send_packet(cur->pCtx, packet), "Error sending packet");
+        int receive_ret = avcodec_receive_frame(cur->pCtx, cur->pRaw);
+        if (receive_ret == AVERROR(EAGAIN)) {
+            // The decoder needs more data to produce a frame.
+            // No action required here. The next packet will be processed in the next loop iteration.
+        } else if (receive_ret < 0) {
+            AVTRY(receive_ret, "Error receiving frame");
+        }
     }
+
+// For debugging purposes (slow) :
+    // if( packet->stream_index == cur->videoStream ) {
+    //     int send_ret = avcodec_send_packet(cur->pCtx, packet);
+    //     if (send_ret < 0) {
+    //         // Handle the error
+    //         fprintf(stderr, "Error sending packet: %s\n", av_err2str(send_ret));
+    //         return send_ret;
+    //     }
+
+    //     while (1) {
+    //         int receive_ret = avcodec_receive_frame(cur->pCtx, cur->pRaw);
+    //         if (receive_ret == 0) {
+    //             // Frame is successfully received, you can use cur->pRaw for further processing.
+    //             #if 1 // enable for debugging
+    //             printf("Packet - pts:%5lld dts:%5lld (%5d) - flag: %1d - Frame pts:%5lld %5lld\n",
+    //                 packet->pts, packet->dts, target,
+    //                 packet->flags,
+    //                 cur->pRaw->pts, cur->pRaw->best_effort_timestamp);
+    //             #endif
+    //             // Break out of the loop if the frame is successfully received.
+    //             break;
+    //         } else if (receive_ret == AVERROR(EAGAIN)) {
+    //             // This error means the decoder needs more data to produce a frame.
+    //             break;
+    //         } else {
+    //             // Handle other errors
+    //             fprintf(stderr, "Error receiving frame: %s\n", av_err2str(receive_ret));
+    //             return receive_ret;
+    //         }
+    //     }
+    // }
+
     av_packet_unref(packet);
   } while (cur->pRaw->best_effort_timestamp < target);
 
