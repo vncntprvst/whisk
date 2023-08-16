@@ -53,7 +53,9 @@ For Windows systems (ignore VS Code instructions if not using it):
 * Install gcc as mentioned in [MSYS2 installation page](https://www.msys2.org/): `pacman -S mingw-w64-ucrt-x86_64-gcc`   
 * Install the Mingw-w64 toolchain: `pacman -S --needed base-devel mingw-w64-x86_64-toolchain`
 * Install cmake and generators (ninja ... make is installed with the toolchain above, ): `pacman -S mingw-w64-x86_64-cmake`
-* Install the FFmpeg libraries for the 64-bit MinGW toolchain: `pacman -S mingw-w64-x86_64-ffmpeg`.  
+* Install the FFmpeg libraries for the 64-bit MinGW toolchain: 
+     To install the most recent version instead, run `pacman -S mingw-w64-x86_64-ffmpeg`.  
+     If using python (see packages `whisk-janelia` and `whiskiwrap`), you need to ensure compatibility between the ffmpeg version used to build whisk (currently, version 6.0) and the ffmpeg library files that python will call with the package `ctypes`. Tarballs are available for download on [MSYS2's package page](https://packages.msys2.org/package/mingw-w64-x86_64-ffmpeg), or run `wget https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-ffmpeg-6.0-7-any.pkg.tar.zst`. Then, install the package with  `pacman -U mingw-w64-x86_64-ffmpeg-6.0-7-any.pkg.tar.zst`.    
 * Update the PKG_CONFIG_PATH environment variable to include the path to the FFmpeg library .pc files. In the MSYS2 terminal, run: `export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/mingw64/lib/pkgconfig`, and add it to `~/.bashrc` as well to make this change permanent.
 5. Open a terminal, navigate to the `whisk` repository directory.
 6. Run the following commands:  

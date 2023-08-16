@@ -10,3 +10,7 @@ xcode
 
 # Do not exclude the *.so files in the bin directory
 !whisk/bin/*.so
+
+newoldbuild
+.vs
+.vscode
