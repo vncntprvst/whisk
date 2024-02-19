@@ -1,4 +1,4 @@
-import os
+import os, stat
 import distutils.sysconfig
 from setuptools import setup, find_packages, Command
 from setuptools.command.install import install
@@ -18,12 +18,21 @@ class CustomInstall(install):
             from whisk import whisk_utils
             whisk_utils.download_and_extract_ffmpeg_dlls(destination_dir=whisk_ffmpegbin_dir)
 
+        # Update the permissions of the files in the 'bin' directory
+        bin_dir = os.path.join(site_packages_dir, 'whisk', 'bin')
+        for filename in os.listdir(bin_dir):
+            file_path = os.path.join(bin_dir, filename)
+            # For all users: read, write, execute
+            # os.chmod(file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            # For current user: read, write, execute
+            os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
+
 with open('README.md', 'r') as f:
     long_description = f.read()
 
 setup(
     name='whisk-janelia',
-    version='1.1.5',
+    version='1.1.6',
     author='Nathan Clack',
     maintainer=', '.join(['clackn','cxrodgers','mitchclough','vncntprvst']),
     url='https://github.com/nclack/whisk/',
