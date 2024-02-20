@@ -1,25 +1,10 @@
-import os, stat, atexit
+import os, stat
 import distutils.sysconfig
 from setuptools import setup, find_packages, Command
 from setuptools.command.install import install
 
-def post_install():
-    print("Running post-install script...")
-    # Update the permissions of the files in the 'bin' directory
-    print("Updating permissions of files in the 'bin' directory...")
-    site_packages_dir = distutils.sysconfig.get_python_lib()
-    bin_dir = os.path.join(site_packages_dir, 'whisk', 'bin')
-    for filename in os.listdir(bin_dir):
-        file_path = os.path.join(bin_dir, filename)
-        # For all users: read, write, execute
-        # os.chmod(file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-        # For current user: read, write, execute
-        os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
-        print(f"New permissions: {os.stat(file_path).st_mode}")
-    
 class CustomInstall(install):
     def run(self):
-        print("Running custom install...")
         super().run()  # Ensure the package is installed first
         
         if 'ffmpeg' in self.distribution.extras_require:
@@ -33,7 +18,15 @@ class CustomInstall(install):
             from whisk import whisk_utils
             whisk_utils.download_and_extract_ffmpeg_dlls(destination_dir=whisk_ffmpegbin_dir)
 
-        atexit.register(post_install)
+        # Update the permissions of the files in the 'bin' directory. This will not be preserved by the wheel used by pip. 
+        # Run the post-install script to set the permissions after installation
+        bin_dir = os.path.join(site_packages_dir, 'whisk', 'bin')
+        for filename in os.listdir(bin_dir):
+            file_path = os.path.join(bin_dir, filename)
+            # For all users: read, write, execute
+            # os.chmod(file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            # For current user: read, write, execute
+            os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
 
 with open('README.md', 'r') as f:
     long_description = f.read()
