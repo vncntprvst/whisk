@@ -9,7 +9,8 @@ A copy of the instructions and the tutorial are available [here](https://github.
 Downloading
 ===========
 Pre-built binaries are available on [this forked repository](https://github.com/vncntprvst/whisk/tree/master/whisk/bin).  
-Binary and library file can simply be installed from Pypi, with `pip install whisk-janelia`.  Note that on Linux, if not root, you may need to make some of the binary files (e.g., `trace`) executable with `chmod +x /path/to/whisk/bin/exec_file`. You can also use the post-installation script `update_permissions.py` to make all files in the `whisk/bin` directory executable.
+Binary and library file can simply be installed from Pypi, with `pip install whisk-janelia`.  
+> Note that on Linux, if not root, you may need to make some of the binary files executable, e.g. `chmod +x /path/to/whisk/bin/trace`. You can also use the post-installation script `update_permissions.py` to make all files in the `whisk/bin` directory executable.
 See also the [README on the whisk-dockerfile repo](https://github.com/wanglab-neuro/whisk-dockerfile), in `whisk-base` section.  
 
 Building
