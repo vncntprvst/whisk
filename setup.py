@@ -33,7 +33,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='whisk-janelia',
-    version='1.1.6',
+    version='1.1.7',
     author='Nathan Clack',
     maintainer=', '.join(['clackn','cxrodgers','mitchclough','vncntprvst']),
     url='https://github.com/nclack/whisk/',

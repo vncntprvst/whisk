@@ -61,6 +61,7 @@ whisk/bin/seedtest.exe
 whisk/bin/seedtest.exp
 whisk/bin/seedtest.ilk
 whisk/bin/seedtest.lib
+whisk/bin/stripetest
 whisk/bin/stripetest.exe
 whisk/bin/stripetest.exp
 whisk/bin/stripetest.ilk
