@@ -931,8 +931,8 @@ if (WIN32)
   )
 else()
     set_target_properties(whisk PROPERTIES OUTPUT_NAME "libwhisk")
-    set_target_properties(whisk PROPERTIES OUTPUT_NAME "libtraj")
-    set_target_properties(whisk PROPERTIES OUTPUT_NAME "libwhiskio")
+    set_target_properties(traj PROPERTIES OUTPUT_NAME "libtraj")
+    set_target_properties(whiskio PROPERTIES OUTPUT_NAME "libwhiskio")
 endif()
 
 #
