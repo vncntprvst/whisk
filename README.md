@@ -3,7 +3,7 @@ Janelia Whisker tracking
 Fully automated tracking of single rows of whiskers in high-speed video.  
 
 The original source code repository is https://github.com/nclack/whisk/.    
-The [associated website](http://openwiki.janelia.org/wiki/display/MyersLab/Whisker+Tracking) for this program is not accessible anymore outside of Janelia. 
+The [original website](http://openwiki.janelia.org/wiki/display/MyersLab/Whisker+Tracking) for this program is not accessible anymore, but it has been duplicated [here](https://wikis.janelia.org/display/WT/Whisker+Tracking).
 A copy of the instructions and the tutorial are available [here](https://github.com/wanglab-neuro/whisk-dockerfile/tree/main/context/wiki).
 
 Downloading

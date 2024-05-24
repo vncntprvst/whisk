@@ -30,6 +30,11 @@ class CustomInstall(install):
 
 with open('README.md', 'r') as f:
     long_description = f.read()
+    
+print("WARNING: This package requires ffmpeg and associated dynamic libraries. \n"
+      "Some library files from BtbN's FFmpeg-Builds (https://github.com/BtbN/FFmpeg-Builds) will be downloaded automatically to whisk/bin if specific versions are not found in LD_LIBRARY_PATH or PATH. \n")
+    #   "On Debian-based systems, you can install these manually with the following command:\n"
+    #   "sudo apt update && sudo apt install -y --no-install-recommends libavdevice58 libsvtav1enc-dev")
 
 setup(
     name='whisk-janelia',
