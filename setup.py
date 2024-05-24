@@ -13,7 +13,10 @@ class CustomInstall(install):
             # Determine the destination directory
             site_packages_dir = distutils.sysconfig.get_python_lib()
             print(f"Site packages directory: {site_packages_dir}")
-            whisk_ffmpegbin_dir = os.path.join(site_packages_dir, 'whisk', 'bin', 'ffmpeg_win64_lgpl_shared')
+            if os.name == 'posix':
+                whisk_ffmpegbin_dir = os.path.join(site_packages_dir, 'whisk', 'bin', 'ffmpeg_linux64_lgpl_shared')
+            elif os.name == 'nt':
+                whisk_ffmpegbin_dir = os.path.join(site_packages_dir, 'whisk', 'bin', 'ffmpeg_win64_lgpl_shared')
             
             from whisk import whisk_utils
             whisk_utils.download_and_extract_ffmpeg_dlls(destination_dir=whisk_ffmpegbin_dir)
@@ -32,9 +35,8 @@ with open('README.md', 'r') as f:
     long_description = f.read()
     
 print("WARNING: This package requires ffmpeg and associated dynamic libraries. \n"
-      "Some library files from BtbN's FFmpeg-Builds (https://github.com/BtbN/FFmpeg-Builds) will be downloaded automatically to whisk/bin if specific versions are not found in LD_LIBRARY_PATH or PATH. \n")
-    #   "On Debian-based systems, you can install these manually with the following command:\n"
-    #   "sudo apt update && sudo apt install -y --no-install-recommends libavdevice58 libsvtav1enc-dev")
+      "Some library files from BtbN's FFmpeg-Builds (https://github.com/BtbN/FFmpeg-Builds)\n"
+      " will be downloaded automatically to whisk/bin if specific versions are not found in LD_LIBRARY_PATH or PATH. \n")
 
 setup(
     name='whisk-janelia',
