@@ -35,12 +35,14 @@ with open('README.md', 'r') as f:
     long_description = f.read()
     
 print("WARNING: This package requires ffmpeg and associated dynamic libraries. \n"
+      "Recommended ffmpeg version is 6.0. \n"
       "Some library files from BtbN's FFmpeg-Builds (https://github.com/BtbN/FFmpeg-Builds)\n"
-      " will be downloaded automatically to whisk/bin if specific versions are not found in LD_LIBRARY_PATH or PATH. \n")
+      " will be downloaded automatically to whisk/bin if specific versions are not found in LD_LIBRARY_PATH or PATH. \n "
+      "Be aware however that multiple versions of ffmpeg and these libraries may cause conflicts.\n")
 
 setup(
     name='whisk-janelia',
-    version='1.1.8',
+    version='1.1.9',
     author='Nathan Clack',
     maintainer=', '.join(['clackn','cxrodgers','mitchclough','vncntprvst']),
     url='https://github.com/nclack/whisk/',
