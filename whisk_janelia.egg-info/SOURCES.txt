@@ -19,7 +19,6 @@ whisk/bin/classify_radial.exe
 whisk/bin/classify_radial.exp
 whisk/bin/classify_radial.ilk
 whisk/bin/classify_radial.lib
-whisk/bin/default.parameters
 whisk/bin/libtraj.so
 whisk/bin/libwhisk.so
 whisk/bin/libwhiskio.so

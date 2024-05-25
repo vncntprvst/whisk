@@ -1,14 +1,15 @@
 Metadata-Version: 2.1
 Name: whisk-janelia
-Version: 1.1.8
+Version: 1.1.9
 Summary: Fully automated tracking of single rows of whiskers in high-speed video.
 Home-page: https://github.com/nclack/whisk/
 Author: Nathan Clack
 Maintainer: clackn, cxrodgers, mitchclough, vncntprvst
 License: LICENSE.txt
 Description-Content-Type: text/markdown
-Provides-Extra: ffmpeg
 License-File: LICENSE.txt
+Provides-Extra: ffmpeg
+Requires-Dist: requests<3,>=2.24; extra == "ffmpeg"
 
 Janelia Whisker tracking
 ========================
