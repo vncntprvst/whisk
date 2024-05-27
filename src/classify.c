@@ -6,6 +6,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,7 +41,7 @@ void Measurements_Table_Pixel_Support(Measurements *table, int n_rows, int *maxx
     for (int i = 0; i < n_rows; ++i)
     {
         double *d = table[i].data;
-        if (d == NULL) continue;
+        if (d == NULL) continue; // Ensure data is not NULL
         x = MAX(x, d[4]);
         y = MAX(y, d[5]);
         x = MAX(x, d[6]);
@@ -72,198 +73,226 @@ void Helper_Get_Face_Point(char* directive, int maxx, int maxy, int* x, int* y)
     error("Directive supplied to Helper_Get_Face_Point could not be recognized.\n");
 }
 
-void Helper_Get_Follicle_Const_Axis( char* directive, int maxx, int maxy, int* col, int *is_gt, int *high)
-{ static char *options[] = { "top",
-                             "left",
-                             "bottom",
-                             "right",
-                             NULL};
-  int iopt = 0;
-  static const int x = 4,
-                   y = 5;
-  while( options[iopt] && strncmp( options[iopt], directive, 10 ) != 0 )
-    iopt++;
-
-  switch(iopt)
-  { 
-    case 0:
-      *col = y;  *is_gt = 1; *high = maxy;  break;
-    case 1:                   
-      *col = x;  *is_gt = 0; *high = maxx;  break;
-    case 2:                   
-      *col = y;  *is_gt = 0; *high = maxy;  break;
-    case 3:                   
-      *col = x;  *is_gt = 1; *high = maxx;  break;
-    default:
-      error("Directive supplied to Helper_Get_Follicle_Const_Axis could not be recognized.\n");
-  }
-}
-
- void Measurements_Table_Label_By_RadialThreshold( Measurements *table, int n_rows, double thresh, int ox, int oy, int colx, int coly)
+// Function to get the follicle constant axis based on a directive
+void Helper_Get_Follicle_Const_Axis(char* directive, int maxx, int maxy, int* col, int *is_gt, int *high)
 {
-  double t2 = thresh*thresh;
-  Measurements *row = table + n_rows;
-  while(row-- > table)
-  { double dx = row->data[colx] - ox,
-           dy = row->data[coly] - oy,
-           r2 = dx*dx + dy*dy;
-    row->state = r2 <= t2;
-#if 0
-    printf("Face->Follicle: %4d %4d %4d %4d t2:%#5.5f dx:%+#5.5f dy:%+#5.5f r2:%#5.5f %c\n",
-        ox,oy,(int)(row->data[colx]),(int)(row->data[coly]),
-        t2,dx,dy,r2,row->state?'*':'.');
-#endif
-  }
-} 
+    static char *options[] = { "top", "left", "bottom", "right", NULL };
+    int iopt = 0;
+    static const int x = 4, y = 5;
+    while (options[iopt] && strncmp(options[iopt], directive, 10) != 0)
+        iopt++;
 
- void Measurements_Table_Label_By_Threshold( Measurements *table, int n_rows, int col, double threshold, int is_gt )
-{ Measurements *row = table + n_rows;
-  if(is_gt)
-  { while(row-- > table)
-      row->state = ( row->data[col] >  threshold );
-  } else
-  { while(row-- > table)
-      row->state = ( row->data[col] <= threshold );
-  }
-}
-
- void Measurements_Table_Label_By_Threshold_Or( Measurements *table, int n_rows, int col, double threshold, int is_gt )
-{ Measurements *row = table + n_rows;
-  if(is_gt)
-  { while(row-- > table)
-      row->state |= ( row->data[col] >  threshold );
-  } else
-  { while(row-- > table)
-      row->state |= ( row->data[col] <= threshold );
-  }
-}
-
- void Measurements_Table_Label_By_Threshold_And( Measurements *table, int n_rows, int col, double threshold, int is_gt )
-{ Measurements *row = table + n_rows;
-  if(is_gt)
-  { while(row-- > table)
-      row->state &= ( row->data[col] >  threshold );
-  } else
-  { while(row-- > table)
-      row->state &= ( row->data[col] <= threshold );
-  }
-}
-
-#define countof(e) (sizeof(e)/sizeof(*e))
-#define show(e) printf("%s is %d\n",#e,(e))
-int Measurements_Table_Best_Frame_Count_By_State( Measurements *table, int n_rows, int label, int *argmax )
-{ int hist[64];    // this has to be greater than the largest observed trace count in a frame
-  Measurements *row = table + n_rows;
-  int counter = 0;
-  int last = table->fid;
-
-  memset( hist,0, sizeof(hist) );
-
-  while( row-- > table )         // Build histogram
-  { int fid = row->fid;
-    if( fid - last != 0 )
-    { last = fid;
-      counter = MIN(counter,countof(hist)-1); // histogram saturation 
-      hist[counter]++;
-      counter = 0;
+    switch (iopt)
+    {
+        case 0: *col = y; *is_gt = 1; *high = maxy; break;
+        case 1: *col = x; *is_gt = 0; *high = maxx; break;
+        case 2: *col = y; *is_gt = 0; *high = maxy; break;
+        case 3: *col = x; *is_gt = 1; *high = maxx; break;
+        default: error("Directive supplied to Helper_Get_Follicle_Const_Axis could not be recognized.\n");
     }
-    if( row->state ) counter++;
-  }
+}
 
-  { int max = -1;                // max,argmax on hist
+// Function to label the measurements table by radial threshold
+void Measurements_Table_Label_By_RadialThreshold(Measurements *table, int n_rows, double thresh, int ox, int oy, int colx, int coly)
+{
+    double t2 = thresh * thresh;
+    Measurements *row = table + n_rows;
+    while (row-- > table)
+    {
+        double dx = row->data[colx] - ox;
+        double dy = row->data[coly] - oy;
+        double r2 = dx * dx + dy * dy;
+        row->state = r2 <= t2;
+#if 0
+        printf("Face->Follicle: %4d %4d %4d %4d t2:%#5.5f dx:%+#5.5f dy:%+#5.5f r2:%#5.5f %c\n",
+            ox, oy, (int)(row->data[colx]), (int)(row->data[coly]),
+            t2, dx, dy, r2, row->state ? '*' : '.');
+#endif
+    }
+}
+
+// Function to label the measurements table by a threshold
+void Measurements_Table_Label_By_Threshold(Measurements *table, int n_rows, int col, double threshold, int is_gt)
+{
+    Measurements *row = table + n_rows;
+    if (is_gt)
+    {
+        while (row-- > table)
+            row->state = (row->data[col] > threshold);
+    }
+    else
+    {
+        while (row-- > table)
+            row->state = (row->data[col] <= threshold);
+    }
+}
+
+// Function to label the measurements table by a threshold using logical OR
+void Measurements_Table_Label_By_Threshold_Or(Measurements *table, int n_rows, int col, double threshold, int is_gt)
+{
+    Measurements *row = table + n_rows;
+    if (is_gt)
+    {
+        while (row-- > table)
+            row->state |= (row->data[col] > threshold);
+    }
+    else
+    {
+        while (row-- > table)
+            row->state |= (row->data[col] <= threshold);
+    }
+}
+
+// Function to label the measurements table by a threshold using logical AND
+void Measurements_Table_Label_By_Threshold_And(Measurements *table, int n_rows, int col, double threshold, int is_gt)
+{
+    Measurements *row = table + n_rows;
+    if (is_gt)
+    {
+        while (row-- > table)
+            row->state &= (row->data[col] > threshold);
+    }
+    else
+    {
+        while (row-- > table)
+            row->state &= (row->data[col] <= threshold);
+    }
+}
+
+#define countof(e) (sizeof(e) / sizeof(*e))
+#define show(e) printf("%s is %d\n", #e, (e))
+
+// Function to find the best frame count by state
+int Measurements_Table_Best_Frame_Count_By_State(Measurements *table, int n_rows, int label, int *argmax)
+{
+    int hist[64] = {0}; // This has to be greater than the largest observed trace count in a frame
+    Measurements *row = table + n_rows;
+    int counter = 0;
+    int last = table->fid;
+
+    memset(hist, 0, sizeof(hist));
+
+    while (row-- > table) // Build histogram
+    {
+        int fid = row->fid;
+        if (fid - last != 0)
+        {
+            last = fid;
+            counter = MIN(counter, countof(hist) - 1); // Histogram saturation
+            hist[counter]++;
+            counter = 0;
+        }
+        if (row->state) counter++;
+    }
+
+    int max = -1; // Max, argmax on hist
     int *h = hist + countof(hist);
-    while(h-- > hist)
-    { if( (*h)>max )
-      { max = *h;
-        *argmax = h-hist;
-      }
+    while (h-- > hist)
+    {
+        if ((*h) > max)
+        {
+            max = *h;
+            *argmax = h - hist;
+        }
     }
     return max;
-  }
 }
 
-//assumes measurements table sorted by time
+// Function to estimate the best threshold
+// Assumes measurements table sorted by time
 SHARED_EXPORT
-double Measurements_Table_Estimate_Best_Threshold( Measurements *table, int n_rows, int column, double low, double high, int is_gt, int *target_count )
-{ double thresh;
-  int best = -1.0;
-  double argmax;
-  assert(low<high);
-  for( thresh = low; thresh < high; thresh ++ )
-  { int count, n;
-    Measurements_Table_Label_By_Threshold( table, n_rows, column, thresh, is_gt );
-    count = Measurements_Table_Best_Frame_Count_By_State( table, n_rows, 1, &n );
+double Measurements_Table_Estimate_Best_Threshold(Measurements *table, int n_rows, int column, double low, double high, int is_gt, int *target_count)
+{
+    double thresh;
+    int best = -1.0;
+    double argmax;
+    assert(low < high);
+    for (thresh = low; thresh < high; thresh++)
+    {
+        int count, n;
+        Measurements_Table_Label_By_Threshold(table, n_rows, column, thresh, is_gt);
+        count = Measurements_Table_Best_Frame_Count_By_State(table, n_rows, 1, &n);
 #ifdef DEBUG_ESTIMATE_BEST_LENGTH_THRESHOLD
-    printf("%4f  %3d  %3d\n", thresh, count, n );
+        printf("%4f  %3d  %3d\n", thresh, count, n);
 #endif
-    if( count > best && n>0)
-    { best = count;
-      argmax = thresh;
-      if( target_count)
-        *target_count = n;
+        if (count > best && n > 0)
+        {
+            best = count;
+            argmax = thresh;
+            if (target_count)
+                *target_count = n;
+        }
     }
-  }
-  return argmax;
+    return argmax;
 }
 
-//assumes measurements table sorted by time
-double Measurements_Table_Estimate_Best_Threshold_For_Known_Count( Measurements *table, int n_rows, int column, double low, double high, int is_gt, int target_count )
-{ double thresh;
-  int best = -1.0;
-  double argmax;
-  assert(low<high);
-  for( thresh = low; thresh < high; thresh ++ )
-  { int n_frames_w_target=0;
-    Measurements_Table_Label_By_Threshold( table, n_rows, column, thresh, is_gt );
-    // count number of frames with exactly `target_count` segments above threshold
-    { Measurements *row = table+n_rows;
-      int n_seg_above_thresh = 0;
-      int last = table->fid;
-      while( row-- > table )
-      { int fid = row->fid;
-        if( fid - last != 0 )
-        { last = fid;
-          if(n_seg_above_thresh == target_count) n_frames_w_target++;
-          n_seg_above_thresh=0;
+// Function to estimate the best threshold for a known count
+// Assumes measurements table sorted by time
+double Measurements_Table_Estimate_Best_Threshold_For_Known_Count(Measurements *table, int n_rows, int column, double low, double high, int is_gt, int target_count)
+{
+    double thresh;
+    int best = -1.0;
+    double argmax;
+    assert(low < high);
+    for (thresh = low; thresh < high; thresh++)
+    {
+        int n_frames_w_target = 0;
+        Measurements_Table_Label_By_Threshold(table, n_rows, column, thresh, is_gt);
+        // Count number of frames with exactly `target_count` segments above threshold
+        Measurements *row = table + n_rows;
+        int n_seg_above_thresh = 0;
+        int last = table->fid;
+        while (row-- > table)
+        {
+            int fid = row->fid;
+            if (fid - last != 0)
+            {
+                last = fid;
+                if (n_seg_above_thresh == target_count) n_frames_w_target++;
+                n_seg_above_thresh = 0;
+            }
+#ifdef DEBUG_ESTIMATE_BEST_LENGTH_THRESHOLD_FOR_KNOWN_COUNT
+            assert(row->state == 0 || row->state == 1);
+#endif
+            n_seg_above_thresh += row->state; // row->state is either 0 or 1
         }
 #ifdef DEBUG_ESTIMATE_BEST_LENGTH_THRESHOLD_FOR_KNOWN_COUNT
-        assert(row->state == 0 || row->state == 1);
+        printf("%4.2f   %3d\n", thresh, n_frames_w_target);
 #endif
-        n_seg_above_thresh += row->state; // row->state is either 0 or 1;
-      }
+        if (n_frames_w_target > best)
+        {
+            best = n_frames_w_target;
+            argmax = thresh;
+        }
     }
-#ifdef DEBUG_ESTIMATE_BEST_LENGTH_THRESHOLD_FOR_KNOWN_COUNT
-    printf("%4.2f   %3d\n", thresh, n_frames_w_target );
-#endif
-    if( n_frames_w_target > best )
-    { best = n_frames_w_target;
-      argmax = thresh;
-    }
-  }
-  return argmax;
+    return argmax;
 }
 
-void Measurements_Table_Label_By_Order( Measurements *table, int n_rows, int target_count )
-{ Sort_Measurements_Table_Time_State_Face( table, n_rows );
-  assert(n_rows);
-  n_rows--;
-  while(n_rows>=0)
-  { int fid = table[n_rows].fid;
-    int count = 1;
-    int j = n_rows;                                         // First pass: count the state==1 
-    while( j-- && table[j].state==1 && table[j].fid==fid )  //  already counted the first row
-        count ++;
+// Function to label the measurements table by order
+// Assumes measurements table sorted by time
+void Measurements_Table_Label_By_Order(Measurements *table, int n_rows, int target_count)
+{
+    Sort_Measurements_Table_Time_State_Face(table, n_rows);
+    assert(n_rows);
+    n_rows--;
+    while (n_rows >= 0)
+    {
+        int fid = table[n_rows].fid;
+        int count = 1;
+        int j = n_rows; // First pass: count the state == 1
+        while (j-- && table[j].state == 1 && table[j].fid == fid) // Already counted the first row
+            count++;
 #ifdef DEBUG_MEASUREMENTS_TABLE_LABEL_BY_ORDER
-    debug("Frame %5d: Count = %5d\n",fid,count);
+        debug("Frame %5d: Count = %5d\n", fid, count);
 #endif
-    j = n_rows;                                                          
-    if( count == target_count )           // Second pass: label          
-      while( j>=0 && table[j].state==1 && table[j].fid==fid )  //  relabel the good ones
-        table[j--].state = --count;
-    while( j>=0 && table[j].fid==fid )    //  relabel the bad ones as -1
-      table[j--].state = -1;
-    n_rows = j;
-  }
+        j = n_rows;
+        if (count == target_count) // Second pass: label
+            while (j >= 0 && table[j].state == 1 && table[j].fid == fid) // Relabel the good ones
+                table[j--].state = --count;
+        while (j >= 0 && table[j].fid == fid) // Relabel the bad ones as -1
+            table[j--].state = -1;
+        n_rows = j;
+    }
 }
 
 #ifdef TEST_CLASSIFY_1
