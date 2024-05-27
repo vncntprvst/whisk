@@ -29,6 +29,7 @@
 
 #include <common.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -41,6 +42,8 @@
 #include <libavutil/imgutils.h>
 #include <libavdevice/avdevice.h>
 #include <libavutil/pixfmt.h>
+
+
 //#include <avcodec.h>
 //#include <avformat.h>
 //#include <swscale.h>
@@ -115,66 +118,30 @@ void maybeInit()
  * Ensure Format Context is Freed: Use avformat_free_context to ensure the format context is properly freed and set to NULL.
  */
 
-void *ffmpeg_video_quit(ffmpeg_video *cur)
-{
-    if (!cur) return NULL;
+void ffmpeg_video_quit(ffmpeg_video *cur) {
+    if (!cur) return;
+    if (cur->Sctx) sws_freeContext(cur->Sctx);
 
-    printf("Entering ffmpeg_video_quit\n");
-    fflush(stdout);
+    if (cur->pRaw) av_frame_free(&cur->pRaw);
+    if (cur->pDat) av_frame_free(&cur->pDat);
 
-    if (cur->Sctx)
-    {
-        sws_freeContext(cur->Sctx);
-        cur->Sctx = NULL;
-    }
+    if (cur->pCtx) avcodec_close(cur->pCtx);
+    if (cur->pFormatCtx) avformat_close_input(&cur->pFormatCtx);
 
-    if (cur->pRaw)
-    {
-        av_frame_free(&cur->pRaw);
-        cur->pRaw = NULL;
-    }
-
-    if (cur->pDat)
-    {
-        av_frame_free(&cur->pDat);
-        cur->pDat = NULL;
-    }
-
-    if (cur->pCtx)
-    {
-        avcodec_close(cur->pCtx);
-        avcodec_free_context(&cur->pCtx);
-        cur->pCtx = NULL;
-    }
-
-    if (cur->pFormatCtx)
-    {
-        avformat_close_input(&cur->pFormatCtx);
-        avformat_free_context(cur->pFormatCtx);
-        cur->pFormatCtx = NULL;
-    }
-
-    if (cur->data[0])
-    {
+    // Ensure data is only freed if it was allocated
+    if (cur->data[0]) {
         printf("Freeing cur->data[0] at %p\n", cur->data[0]);
-        fflush(stdout);
         av_freep(&cur->data[0]);
         cur->data[0] = NULL;
     }
-
     free(cur);
-
-    printf("Exiting ffmpeg_video_quit\n");
-    fflush(stdout);
-
-    return NULL;
 }
 
 ffmpeg_video *ffmpeg_video_init(const char *fname, int format) {
     int i = 0;
     ffmpeg_video *ret = NULL;
     maybeInit();
-    
+
     printf("Entering ffmpeg_video_init\n");
     fflush(stdout);
 
@@ -229,14 +196,19 @@ ffmpeg_video *ffmpeg_video_init(const char *fname, int format) {
 
     ret->width = ret->pCtx->width;
     ret->height = ret->pCtx->height;
+
+    // Print parameters before calling av_image_alloc
+    printf("Calling av_image_alloc with width=%d, height=%d, pix_fmt=%d\n", ret->width, ret->height, ret->pix_fmt);
+
     ret->numBytes = av_image_alloc(ret->data, ret->linesize, ret->width, ret->height, ret->pix_fmt, 1);
     if (ret->numBytes < 0) {
-        printf("Error allocating image\n");
+        printf("Error allocating image: %d\n", ret->numBytes);
         goto Error;
     }
 
     ret->numFrames = DURATION(ret->pFormatCtx);
 
+    /* Init buffers */
     ret->pRaw = av_frame_alloc();
     ret->pDat = av_frame_alloc();
     ret->pDat->format = ret->pix_fmt;
@@ -247,6 +219,7 @@ ffmpeg_video *ffmpeg_video_init(const char *fname, int format) {
         goto Error;
     }
 
+    /* Init scale & convert */
     ret->Sctx = sws_getContext(ret->pCtx->width, ret->pCtx->height, ret->pCtx->pix_fmt, ret->width, ret->height, ret->pix_fmt, SWS_BICUBIC, NULL, NULL, NULL);
     if (!ret->Sctx) {
         printf("Error getting sws context\n");
@@ -255,6 +228,7 @@ ffmpeg_video *ffmpeg_video_init(const char *fname, int format) {
 
     av_dump_format(ret->pFormatCtx, 0, fname, 0);
 
+    // setup currentImage
     ret->currentImage.kind = 1;
     ret->currentImage.width = ret->width;
     ret->currentImage.height = ret->height;
@@ -265,10 +239,14 @@ ffmpeg_video *ffmpeg_video_init(const char *fname, int format) {
     return ret;
 
 Error:
+    // Ensure ret->data is not freed if it was not allocated successfully
+    if (ret && ret->data[0]) {
+        av_freep(&ret->data[0]);
+        ret->data[0] = NULL;
+    }
     ffmpeg_video_quit(ret);
     return NULL;
 }
-
 
 int ffmpeg_video_bytes_per_frame( ffmpeg_video* v )
 {
