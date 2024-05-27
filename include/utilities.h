@@ -70,6 +70,10 @@
 
 #include "compat.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+// Macro to check memory allocation
+#define CHECK_ALLOC(ptr) if ((ptr) == NULL) { fprintf(stderr, "Memory allocation failed\n"); exit(EXIT_FAILURE); }
 
 #define ASCII 128
 
