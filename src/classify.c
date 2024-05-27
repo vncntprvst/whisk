@@ -16,10 +16,15 @@
 #include "measurements_io.h"
 #include "error.h"
 
+// Debugging macros for different parts of the classification process, 
+// printing information about the millimeters per pixel (mm/px) conversion factor,
+// the low and high pixel limits, the face position (x, y), the length threshold, 
+// and the follicle position threshold.
 #define DEBUG_CLASSIFY_1
 #define DEBUG_CLASSIFY_3
 #define DEBUG_CLASSIFY_4
 
+// Uncomment to enable specific debug information
 #if 0
 #define DEBUG_MEAN_SEGMENTS_PER_FRAME_BY_TYPE
 #define DEBUG_ESTIMATE_BEST_LENGTH_THRESHOLD_FOR_KNOWN_COUNT
@@ -27,44 +32,44 @@
 #define DEBUG_MEASUREMENTS_TABLE_LABEL_BY_ORDER
 #endif 
 
-void Measurements_Table_Pixel_Support( Measurements *table, int n_rows, int *maxx, int *maxy )
-{ 
-  int x = 0, y = 0;
-  Measurements *row = table+n_rows;
-  while( row-- > table)  
-  { double *d = row->data;
-    x = MAX(x, d[4]);
-    y = MAX(y, d[5]);
-    x = MAX(x, d[6]);
-    y = MAX(y, d[7]);
-  }
-  *maxx = x;
-  *maxy = y;
+// Function to find the maximum x and y coordinates (presumably of whisker follicle and tip)
+// in the Measurements table
+void Measurements_Table_Pixel_Support(Measurements *table, int n_rows, int *maxx, int *maxy)
+{
+    int x = 0, y = 0;
+    for (int i = 0; i < n_rows; ++i)
+    {
+        double *d = table[i].data;
+        if (d == NULL) continue;
+        x = MAX(x, d[4]);
+        y = MAX(y, d[5]);
+        x = MAX(x, d[6]);
+        y = MAX(y, d[7]);
+    }
+    *maxx = x;
+    *maxy = y;
 }
 
-void Helper_Get_Face_Point( char* directive, int maxx, int maxy, int* x, int *y)
-{ static char *options[] = { "top",
-                             "left",
-                             "bottom",
-                             "right",
-                             NULL};
-  int iopt = 0;
-  while( options[iopt] && strncmp( options[iopt], directive, 10 ) != 0 )
-    iopt++;
-
-  switch(iopt)
-  { 
-    case 0:
-      *x =   maxx/2;   *y =  -maxy/2;   break;
-    case 1:
-      *x =  -maxx/2;   *y =   maxy/2;   break;
-    case 2:
-      *x =   maxx/2;   *y = 3*maxy/2;   break;
-    case 3:
-      *x = 3*maxx/2;   *y =   maxy/2;   break;
-    default:
-      error("Directive supplied to Helper_Get_Face_Point could not be recognized.\n");
-  }
+// Function to get the coordinates of a face point based on a directive
+void Helper_Get_Face_Point(char* directive, int maxx, int maxy, int* x, int* y)
+{
+    static const char *options[] = { "top", "left", "bottom", "right", NULL };
+    for (int iopt = 0; options[iopt] != NULL; ++iopt)
+    {
+        if (strncmp(options[iopt], directive, 10) == 0)
+        {
+            switch (iopt)
+            {
+                case 0: *x = maxx / 2; *y = -maxy / 2; break;
+                case 1: *x = -maxx / 2; *y = maxy / 2; break;
+                case 2: *x = maxx / 2; *y = 3 * maxy / 2; break;
+                case 3: *x = 3 * maxx / 2; *y = maxy / 2; break;
+                default: error("Unrecognized directive\n"); break;
+            }
+            return;
+        }
+    }
+    error("Directive supplied to Helper_Get_Face_Point could not be recognized.\n");
 }
 
 void Helper_Get_Follicle_Const_Axis( char* directive, int maxx, int maxy, int* col, int *is_gt, int *high)
