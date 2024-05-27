@@ -65,7 +65,6 @@
 \*****************************************************************************************/
 
 #ifndef SR_UTILITIES
-
 #define SR_UTILITIES
 
 #include "compat.h"
@@ -77,46 +76,135 @@
 
 #define ASCII 128
 
-/* The usual protected allocation and file opening routines.   */
+/* The usual protected allocation and file opening routines. */
 
+/**
+ * @brief Allocates memory with error checking.
+ * 
+ * @param size The size of the memory to allocate.
+ * @param routine The name of the routine requesting memory.
+ * @return Pointer to the allocated memory.
+ */
 void *Guarded_Malloc(int size, char *routine);
+
+/**
+ * @brief Reallocates memory with error checking.
+ * 
+ * @param array The original memory block to reallocate.
+ * @param size The new size of the memory block.
+ * @param routine The name of the routine requesting memory.
+ * @return Pointer to the reallocated memory.
+ */
 void *Guarded_Realloc(void *array, int size, char *routine);
+
+/**
+ * @brief Duplicates a string with error checking.
+ * 
+ * @param string The original string to duplicate.
+ * @param routine The name of the routine requesting the string duplication.
+ * @return Pointer to the duplicated string.
+ */
 char *Guarded_Strdup(char *string, char *routine);
+
+/**
+ * @brief Opens a file with error checking.
+ * 
+ * @param name The name of the file to open.
+ * @param options The mode in which to open the file.
+ * @param routine The name of the routine requesting the file open.
+ * @return FILE pointer to the opened file.
+ */
 FILE *Guarded_Fopen(char *name, char *options, char *routine);
 
-/* Process the command line according to 'spec' (See Appendix A for details).  Any
-   failure results in an error message and the end of execution.  One tricky thing
+/* Process the command line according to 'spec' (See Appendix A for details). Any
+   failure results in an error message and the end of execution. One tricky thing
    here is that 'spec' itself is interpreted, so an invalid spec will also produce
-   an error message.  Be sure to debug the spec!  If no_escapes is non-zero then any
+   an error message. Be sure to debug the spec! If no_escapes is non-zero then any
    escaping quotes in the specification will not be seen in a usage statement, should
-   one be printed out with an error.                                                  */ 
+   one be printed out with an error. */
 
+/**
+ * @brief Processes command line arguments according to a specification.
+ * 
+ * @param argc The number of command line arguments.
+ * @param argv The command line arguments.
+ * @param spec The specification for parsing arguments.
+ * @param no_escapes If non-zero, escaping quotes will not be shown in usage statement.
+ */
 void Process_Arguments(int argc, char *argv[], char *spec[], int no_escapes);
 
 /* Once the command line has been parsed you can get the value of any argument by calling
-   the appropriately typed 'Get' routine with the name of the argument.  You presumably
-   know the type since you wrote the spec.  If an argument is an iterator then you must
-   further suppply the 'Get' call with the index of the instance you want, where the numbering
-   starts at 1.  To know how many instances there are call Get_Repeat_Count. If an argument
-   is a multi-value option then you must also specify which value you want.  Is_Arg_Matched
+   the appropriately typed 'Get' routine with the name of the argument. You presumably
+   know the type since you wrote the spec. If an argument is an iterator then you must
+   further supply the 'Get' call with the index of the instance you want, where the numbering
+   starts at 1. To know how many instances there are call Get_Repeat_Count. If an argument
+   is a multi-value option then you must also specify which value you want. Is_Arg_Matched
    will tell you if any particular argument has been matched on the command line or not.
-   Finally, you can get the program name with Program_Name.                             */
+   Finally, you can get the program name with Program_Name. */
 
-char  *Program_Name();
+/**
+ * @brief Gets the program name.
+ * 
+ * @return The program name.
+ */
+char *Program_Name();
 
-int    Get_Repeat_Count(char *name);
-int    Is_Arg_Matched(char *name, ...);
+/**
+ * @brief Gets the repeat count of an argument.
+ * 
+ * @param name The name of the argument.
+ * @return The repeat count of the argument.
+ */
+int Get_Repeat_Count(char *name);
 
-int    Get_Int_Arg   (char *name, ...);
+/**
+ * @brief Checks if an argument has been matched on the command line.
+ * 
+ * @param name The name of the argument.
+ * @param ... Additional arguments.
+ * @return Non-zero if the argument is matched, zero otherwise.
+ */
+int Is_Arg_Matched(char *name, ...);
+
+/**
+ * @brief Gets the integer value of an argument.
+ * 
+ * @param name The name of the argument.
+ * @param ... Additional arguments.
+ * @return The integer value of the argument.
+ */
+int Get_Int_Arg(char *name, ...);
+
+/**
+ * @brief Gets the double value of an argument.
+ * 
+ * @param name The name of the argument.
+ * @param ... Additional arguments.
+ * @return The double value of the argument.
+ */
 double Get_Double_Arg(char *name, ...);
-char  *Get_String_Arg(char *name, ...);
+
+/**
+ * @brief Gets the string value of an argument.
+ * 
+ * @param name The name of the argument.
+ * @param ... Additional arguments.
+ * @return The string value of the argument.
+ */
+char *Get_String_Arg(char *name, ...);
 
 /* There may be constraints among the arguments that are not captured by the spec that
-   you explictly check after the call to Process_Args.  If you detect an error and wish
+   you explicitly check after the call to Process_Args. If you detect an error and wish
    to print out a usage message, a call to Print_Argument_Usage will do so on the file
-   'file'.  As for Processs_Arguments, passing in a non-zero no_escapes value suppresses
-   the printing of escape chars in the statement.                                       */
+   'file'. As for Process_Arguments, passing in a non-zero no_escapes value suppresses
+   the printing of escape chars in the statement. */
 
+/**
+ * @brief Prints the argument usage message to a file.
+ * 
+ * @param file The file to print the usage message to.
+ * @param no_escapes If non-zero, escaping quotes will not be shown in usage statement.
+ */
 void Print_Argument_Usage(FILE *file, int no_escapes);
 
 #endif

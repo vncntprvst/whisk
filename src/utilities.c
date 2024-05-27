@@ -57,7 +57,6 @@
 *  Title to copyright in this software will remain with copyright holders.                *
 *                                                                                         *
 \*****************************************************************************************/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -83,48 +82,37 @@
 /*   GUARDED SYSTEM CALLS                                                                */
 /*****************************************************************************************/
 
-void *Guarded_Malloc(int size, char *routine)
-{ void *p;
-
-  p = malloc(size);
-  if (p == NULL)
-    { fprintf(stderr,"\nError in %s:\n",routine);
-      fprintf(stderr,"   Out of memory\n");
-      exit (1);
-    }
-  return (p);
+void *Guarded_Malloc(size_t size, const char *routine)
+{
+    void *ptr = malloc(size);
+    CHECK_ALLOC(ptr);
+    return ptr;
 }
 
-void *Guarded_Realloc(void *p, int size, char *routine)
-{ p = realloc(p,size);
-  if (p == NULL)
-    { fprintf(stderr,"\nError in %s:\n",routine);
-      fprintf(stderr,"   Out of memory\n");
-      exit (1);
-    }
-  return (p);
+void *Guarded_Realloc(void *p, size_t size, const char *routine)
+{
+    void *ptr = realloc(p, size);
+    CHECK_ALLOC(ptr);
+    return ptr;
 }
 
-char *Guarded_Strdup(char *p, char *routine)
-{ p = strdup(p);
-  if (p == NULL)
-    { fprintf(stderr,"\nError in %s:\n",routine);
-      fprintf(stderr,"   Out of memory\n");
-      exit (1);
-    }
-  return (p);
+char *Guarded_Strdup(const char *p, const char *routine)
+{
+    char *ptr = strdup(p);
+    CHECK_ALLOC(ptr);
+    return ptr;
 }
 
-FILE *Guarded_Fopen(char *file_name, char *options, char *routine)
-{ FILE *f;
-
-  f = fopen(file_name,options);
-  if (f == NULL)
-    { fprintf(stderr,"\nError in %s:\n",routine);
-      fprintf(stderr,"   Cannot open %s\n",file_name);
-      exit (1);
+FILE *Guarded_Fopen(const char *file_name, const char *options, const char *routine)
+{
+    FILE *f = fopen(file_name, options);
+    if (f == NULL)
+    {
+        fprintf(stderr, "\nError in %s:\n", routine);
+        fprintf(stderr, "   Cannot open %s\n", file_name);
+        exit(1);
     }
-  return (f);
+    return f;
 }
 
 
