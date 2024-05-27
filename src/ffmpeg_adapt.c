@@ -109,96 +109,166 @@ void maybeInit()
 
 /* Close & Free cur video context
  * This function is also called on failed init, so check existence before de-init
+ * Update VP 05/2024: 
+ * Check and Nullify Pointers: After freeing the memory, set the pointers to NULL to prevent double-free.
+ * Use avcodec_free_context: Ensure the codec context is properly freed using avcodec_free_context.
+ * Ensure Format Context is Freed: Use avformat_free_context to ensure the format context is properly freed and set to NULL.
  */
-void *ffmpeg_video_quit( ffmpeg_video *cur )
-{ if(!cur) return NULL;
-  if( cur->Sctx ) sws_freeContext( cur->Sctx );
 
-  if( cur->pRaw ) av_frame_free( &cur->pRaw );
-  if( cur->pDat ) av_frame_free( &cur->pDat );
-
-  if( cur->pCtx ) avcodec_close( cur->pCtx );
-  if( cur->pFormatCtx ) avformat_close_input( &cur->pFormatCtx );
-
-  if(cur->data) av_freep(&cur->data[0]);
-  free(cur);
-
-  return NULL;
-}
-
-/* Init ffmpeg_video source
- * file: path to open
- * format: AV_PIX_FMT_GRAY8 or AV_PIX_FMT_RGB24
- * Returns ffmpeg_video context on succes, NULL otherwise
- */
-ffmpeg_video *ffmpeg_video_init(const char *fname, int format )
+void *ffmpeg_video_quit(ffmpeg_video *cur)
 {
-  int i = 0;
-  ffmpeg_video *ret;
-  maybeInit();
+    if (!cur) return NULL;
 
-  TRY(ret=(ffmpeg_video*)malloc(sizeof(ffmpeg_video)));
-  memset(ret,0,sizeof(ffmpeg_video));
-  ret->pix_fmt = format;
+    printf("Entering ffmpeg_video_quit\n");
+    fflush(stdout);
 
-  AVDictionary* options = NULL;
-  av_dict_set(&options, "pixel_format", "gray8", 0);
-  ret->pFormatCtx = NULL;
-  AVTRY(avformat_open_input(&ret->pFormatCtx, fname, NULL, &options), NULL);
-  av_dict_free(&options);
+    if (cur->Sctx)
+    {
+        sws_freeContext(cur->Sctx);
+        cur->Sctx = NULL;
+    }
 
-  AVTRY(avformat_find_stream_info(ret->pFormatCtx, NULL), NULL);
-  ret->videoStream = av_find_best_stream(ret->pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
-  AVStream* st = ret->pFormatCtx->streams[ret->videoStream];
-  ret->pCodec = avcodec_find_decoder(st->codecpar->codec_id);
-  if (!ret->pCodec)
-    goto Error;
+    if (cur->pRaw)
+    {
+        av_frame_free(&cur->pRaw);
+        cur->pRaw = NULL;
+    }
 
-  ret->pCtx = avcodec_alloc_context3(ret->pCodec);
-  AVTRY(avcodec_parameters_to_context(ret->pCtx, st->codecpar), NULL);
-  AVTRY(avcodec_open2(ret->pCtx, ret->pCodec, NULL), NULL);
-  ret->width = ret->pCtx->width;
-  ret->height = ret->pCtx->height;
-  ret->numBytes = av_image_alloc(ret->data, ret->linesize, ret->width, ret->height, ret->pix_fmt, 1);
-  if (ret->numBytes < 0)
-    goto Error;
+    if (cur->pDat)
+    {
+        av_frame_free(&cur->pDat);
+        cur->pDat = NULL;
+    }
 
-  ret->numFrames = DURATION(ret->pFormatCtx); //(int)(( ret->pFormatCtx->duration / (double)AV_TIME_BASE ) * ret->pCtx->time_base.den );
+    if (cur->pCtx)
+    {
+        avcodec_close(cur->pCtx);
+        avcodec_free_context(&cur->pCtx);
+        cur->pCtx = NULL;
+    }
 
-  /* Init buffers */
-  ret->pRaw = av_frame_alloc();
-  ret->pDat = av_frame_alloc();
-  ret->pDat->format = ret->pix_fmt;
-  ret->pDat->width = ret->width;
-  ret->pDat->height = ret->height;
-  AVTRY(av_frame_get_buffer(ret->pDat, 0), NULL);
+    if (cur->pFormatCtx)
+    {
+        avformat_close_input(&cur->pFormatCtx);
+        avformat_free_context(cur->pFormatCtx);
+        cur->pFormatCtx = NULL;
+    }
 
-  /* Init scale & convert */
-  ret->Sctx=sws_getContext(
-        ret->pCtx->width,
-        ret->pCtx->height,
-        ret->pCtx->pix_fmt,
-        ret->width,
-        ret->height,
-        ret->pix_fmt,
-        SWS_BICUBIC,NULL,NULL,NULL);
+    if (cur->data[0])
+    {
+        printf("Freeing cur->data[0] at %p\n", cur->data[0]);
+        fflush(stdout);
+        av_freep(&cur->data[0]);
+        cur->data[0] = NULL;
+    }
 
-  /* Give some info on stderr about the file & stream */
-  av_dump_format(ret->pFormatCtx, 0, fname, 0);
+    free(cur);
 
-  // setup currentImage
-  ret->currentImage.kind   = 1;
-  ret->currentImage.width  = ret->width;
-  ret->currentImage.height = ret->height;
-  ret->currentImage.text   = "\0";
-  ret->currentImage.array  = ret->data[0];
+    printf("Exiting ffmpeg_video_quit\n");
+    fflush(stdout);
 
-  ret->last = -1;
-  return ret;
-Error:
-  ffmpeg_video_quit(ret);
-  return NULL;
+    return NULL;
 }
+
+ffmpeg_video *ffmpeg_video_init(const char *fname, int format) {
+    int i = 0;
+    ffmpeg_video *ret = NULL;
+    maybeInit();
+    
+    printf("Entering ffmpeg_video_init\n");
+    fflush(stdout);
+
+    ret = (ffmpeg_video*)malloc(sizeof(ffmpeg_video));
+    if (!ret) {
+        printf("Error allocating ffmpeg_video struct\n");
+        goto Error;
+    }
+    memset(ret, 0, sizeof(ffmpeg_video));
+    ret->pix_fmt = format;
+
+    AVDictionary* options = NULL;
+    av_dict_set(&options, "pixel_format", "gray8", 0);
+    ret->pFormatCtx = NULL;
+    if (avformat_open_input(&ret->pFormatCtx, fname, NULL, &options) < 0) {
+        printf("Error opening input\n");
+        goto Error;
+    }
+    av_dict_free(&options);
+
+    if (avformat_find_stream_info(ret->pFormatCtx, NULL) < 0) {
+        printf("Error finding stream info\n");
+        goto Error;
+    }
+
+    ret->videoStream = av_find_best_stream(ret->pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+    if (ret->videoStream < 0) {
+        printf("Error finding best stream\n");
+        goto Error;
+    }
+
+    AVStream* st = ret->pFormatCtx->streams[ret->videoStream];
+    ret->pCodec = avcodec_find_decoder(st->codecpar->codec_id);
+    if (!ret->pCodec) {
+        printf("Error finding decoder\n");
+        goto Error;
+    }
+
+    ret->pCtx = avcodec_alloc_context3(ret->pCodec);
+    if (!ret->pCtx) {
+        printf("Error allocating codec context\n");
+        goto Error;
+    }
+    if (avcodec_parameters_to_context(ret->pCtx, st->codecpar) < 0) {
+        printf("Error copying codec parameters to context\n");
+        goto Error;
+    }
+    if (avcodec_open2(ret->pCtx, ret->pCodec, NULL) < 0) {
+        printf("Error opening codec\n");
+        goto Error;
+    }
+
+    ret->width = ret->pCtx->width;
+    ret->height = ret->pCtx->height;
+    ret->numBytes = av_image_alloc(ret->data, ret->linesize, ret->width, ret->height, ret->pix_fmt, 1);
+    if (ret->numBytes < 0) {
+        printf("Error allocating image\n");
+        goto Error;
+    }
+
+    ret->numFrames = DURATION(ret->pFormatCtx);
+
+    ret->pRaw = av_frame_alloc();
+    ret->pDat = av_frame_alloc();
+    ret->pDat->format = ret->pix_fmt;
+    ret->pDat->width = ret->width;
+    ret->pDat->height = ret->height;
+    if (av_frame_get_buffer(ret->pDat, 0) < 0) {
+        printf("Error getting frame buffer\n");
+        goto Error;
+    }
+
+    ret->Sctx = sws_getContext(ret->pCtx->width, ret->pCtx->height, ret->pCtx->pix_fmt, ret->width, ret->height, ret->pix_fmt, SWS_BICUBIC, NULL, NULL, NULL);
+    if (!ret->Sctx) {
+        printf("Error getting sws context\n");
+        goto Error;
+    }
+
+    av_dump_format(ret->pFormatCtx, 0, fname, 0);
+
+    ret->currentImage.kind = 1;
+    ret->currentImage.width = ret->width;
+    ret->currentImage.height = ret->height;
+    ret->currentImage.text = "\0";
+    ret->currentImage.array = ret->data[0];
+
+    ret->last = -1;
+    return ret;
+
+Error:
+    ffmpeg_video_quit(ret);
+    return NULL;
+}
+
 
 int ffmpeg_video_bytes_per_frame( ffmpeg_video* v )
 {
@@ -208,74 +278,68 @@ int ffmpeg_video_bytes_per_frame( ffmpeg_video* v )
 /* Parse next packet from cur video
  * Returns 0 on success, -1 otherwise
  */
-int ffmpeg_video_next( ffmpeg_video *cur, int target )
+int ffmpeg_video_next(ffmpeg_video *cur, int target)
 {
-  AVPacket* packet = av_packet_alloc();
-  do {
-    AVTRY(av_read_frame(cur->pFormatCtx, packet), NULL);
-    if (packet->stream_index == cur->videoStream) {
-        AVTRY(avcodec_send_packet(cur->pCtx, packet), "Error sending packet");
-        int receive_ret = avcodec_receive_frame(cur->pCtx, cur->pRaw);
-        if (receive_ret == AVERROR(EAGAIN)) {
-            // The decoder needs more data to produce a frame.
-            // No action required here. The next packet will be processed in the next loop iteration.
-        } else if (receive_ret < 0) {
-            AVTRY(receive_ret, "Error receiving frame");
-        }
+    AVPacket *packet = av_packet_alloc();
+    if (!packet) {
+        fprintf(stderr, "Error allocating AVPacket\n");
+        return -1;
     }
 
-// For debugging purposes (slow) :
-    // if( packet->stream_index == cur->videoStream ) {
-    //     int send_ret = avcodec_send_packet(cur->pCtx, packet);
-    //     if (send_ret < 0) {
-    //         // Handle the error
-    //         fprintf(stderr, "Error sending packet: %s\n", av_err2str(send_ret));
-    //         return send_ret;
-    //     }
+    do {
+        int ret = av_read_frame(cur->pFormatCtx, packet);
+        if (ret < 0) {
+            av_packet_free(&packet);
+            if (ret == AVERROR_EOF)
+                return 0; // End of file
+            return -1; // Other errors
+        }
 
-    //     while (1) {
-    //         int receive_ret = avcodec_receive_frame(cur->pCtx, cur->pRaw);
-    //         if (receive_ret == 0) {
-    //             // Frame is successfully received, you can use cur->pRaw for further processing.
-    //             #if 1 // enable for debugging
-    //             printf("Packet - pts:%5lld dts:%5lld (%5d) - flag: %1d - Frame pts:%5lld %5lld\n",
-    //                 packet->pts, packet->dts, target,
-    //                 packet->flags,
-    //                 cur->pRaw->pts, cur->pRaw->best_effort_timestamp);
-    //             #endif
-    //             // Break out of the loop if the frame is successfully received.
-    //             break;
-    //         } else if (receive_ret == AVERROR(EAGAIN)) {
-    //             // This error means the decoder needs more data to produce a frame.
-    //             break;
-    //         } else {
-    //             // Handle other errors
-    //             fprintf(stderr, "Error receiving frame: %s\n", av_err2str(receive_ret));
-    //             return receive_ret;
-    //         }
-    //     }
-    // }
+        if (packet->stream_index == cur->videoStream) {
+            ret = avcodec_send_packet(cur->pCtx, packet);
+            if (ret < 0) {
+                av_packet_free(&packet);
+                fprintf(stderr, "Error sending packet: %s\n", av_err2str(ret));
+                return -1;
+            }
 
-    av_packet_unref(packet);
-  } while (cur->pRaw->best_effort_timestamp < target);
+            ret = avcodec_receive_frame(cur->pCtx, cur->pRaw);
+            if (ret == AVERROR(EAGAIN)) {
+                // The decoder needs more data to produce a frame.
+                // No action required here. The next packet will be processed in the next loop iteration.
+            } else if (ret < 0) {
+                av_packet_free(&packet);
+                fprintf(stderr, "Error receiving frame: %s\n", av_err2str(ret));
+                return -1;
+            }
+        }
 
-  AVTRY(av_frame_make_writable(cur->pDat), NULL);
+        av_packet_unref(packet);
+    } while (cur->pRaw->best_effort_timestamp < target);
 
-  sws_scale(cur->Sctx,              // sws context
-            cur->pRaw->data,        // src slice
-            cur->pRaw->linesize,    // src stride
-            0,                      // src slice origin y
-            cur->height,            // src slice height
-            cur->pDat->data,        // dst
-            cur->pDat->linesize );  // dst stride
+    av_packet_free(&packet);
 
-  /* copy out raw data */
-  av_image_copy(cur->data, cur->linesize, (const uint8_t **)(cur->pDat->data), cur->pDat->linesize, cur->pix_fmt, cur->width, cur->height);
-  return 0;
+    int ret = av_frame_make_writable(cur->pDat);
+    if (ret < 0) {
+        fprintf(stderr, "Error making frame writable: %s\n", av_err2str(ret));
+        return -1;
+    }
+
+    sws_scale(cur->Sctx,                       // sws context
+              (const uint8_t * const *)cur->pRaw->data, // src slice
+              cur->pRaw->linesize,             // src stride
+              0,                               // src slice origin y
+              cur->height,                     // src slice height
+              cur->pDat->data,                 // dst
+              cur->pDat->linesize);            // dst stride
+
+    /* copy out raw data */
+    av_image_copy(cur->data, cur->linesize, (const uint8_t **)(cur->pDat->data), cur->pDat->linesize, cur->pix_fmt, cur->width, cur->height);
+
+    return 0;
 Error:
-  return -1;
+    return -1;
 }
-
 
 // \returns current frame on success, otherwise -1
 int ffmpeg_video_seek( ffmpeg_video *cur, int64_t iframe )
