@@ -26,14 +26,13 @@
  */
 
 #include "ffmpeg_adapt.h"
-
+#include "image_lib.h"
 #include <common.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-//---
 #ifdef HAVE_FFMPEG
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -42,16 +41,11 @@
 #include <libavutil/imgutils.h>
 #include <libavdevice/avdevice.h>
 #include <libavutil/pixfmt.h>
+#include <libavutil/mem.h>
 
-
-//#include <avcodec.h>
-//#include <avformat.h>
-//#include <swscale.h>
-//---
-//
 #define ENDL "\n"
-#define HERE         printf("%s(%d): HERE"ENDL,__FILE__,__LINE__); 
-#define REPORT(expr) printf("%s(%d):"ENDL "\t%s"ENDL "\tExpression evaluated as false."ENDL,__FILE__,__LINE__,#expr) 
+#define HERE         printf("%s(%d): HERE"ENDL,__FILE__,__LINE__);
+#define REPORT(expr) printf("%s(%d):"ENDL "\t%s"ENDL "\tExpression evaluated as false."ENDL,__FILE__,__LINE__,#expr)
 #define TRY(expr)    do{if(!(expr)) {REPORT(expr); goto Error;}}while(0)
 #define DIE          do{printf("%s(%d): Fatal error.  Aborting."ENDL,__FILE__,__LINE__); exit(-1);}while(0)
 #define AVTRY(expr,msg) \
@@ -75,178 +69,154 @@ static const AVRational FREQ = {1,AV_TIME_BASE}; // same as AV_TIME_BASE_Q, but 
 #define STREAM(e)   ((e)->streams[0])
 #define DURATION(e) (av_rescale_q((e)->duration,av_mul_q(FREQ,STREAM(e)->r_frame_rate),ONE)) ///< gets the duration in #frames
 
-
-typedef struct _ffmpeg_video
-{
-   AVFormatContext *pFormatCtx;
-   AVCodecContext *pCtx;
-   const AVCodec *pCodec;
-   AVFrame *pRaw;
-   AVFrame *pDat;
-   uint8_t *data[AV_NUM_DATA_POINTERS];
-   int linesize[AV_NUM_DATA_POINTERS];
-   struct SwsContext *Sctx;
-   int videoStream, width, height;
-   int numBytes;
-   int numFrames;
-   Image currentImage;
-   int last;
-   int pix_fmt;
-} ffmpeg_video;
+// Definition of the ffmpeg_video structure is now in ffmpeg_adapt.h
 
 void ffmpeg_video_video_debug_ppm(ffmpeg_video *cur, char *file);
 
-//---
-//  IMPLEMENTATION
-//
-
 static int is_one_time_inited = 0;
 
-/* Init ffmpeg */
-void maybeInit()
-{ if(is_one_time_inited)
-    return;
-  avdevice_register_all();
-  is_one_time_inited = 1;
+// Initialize FFmpeg libraries if they haven't been initialized
+void maybeInit() {
+    static int is_one_time_inited = 0;
+    if (is_one_time_inited)
+        return;
+    avformat_network_init(); // Use avformat_network_init instead of deprecated av_register_all and avcodec_register_all
+    is_one_time_inited = 1;
 }
 
-/* Close & Free cur video context
- * This function is also called on failed init, so check existence before de-init
- * Update VP 05/2024: 
- * Check and Nullify Pointers: After freeing the memory, set the pointers to NULL to prevent double-free.
- * Use avcodec_free_context: Ensure the codec context is properly freed using avcodec_free_context.
- * Ensure Format Context is Freed: Use avformat_free_context to ensure the format context is properly freed and set to NULL.
+int is_pix_fmt_supported(const AVCodec *codec, enum AVPixelFormat pix_fmt) {
+    const enum AVPixelFormat *p = codec->pix_fmts;
+    while (*p != AV_PIX_FMT_NONE) {
+        if (*p == pix_fmt)
+            return 1;
+        p++;
+    }
+    return 0;
+}
+
+void ffmpeg_video_quit(ffmpeg_video *v) {
+    if (v->pDat) {
+        av_freep(&v->pDat);
+        v->pDat = NULL;
+    }
+    if (v->pRaw) {
+        av_frame_free(&v->pRaw);
+        v->pRaw = NULL;
+    }
+    if (v->pCtx) {
+        avcodec_close(v->pCtx);
+        v->pCtx = NULL;
+    }
+    if (v->pFormatCtx) {
+        avformat_close_input(&v->pFormatCtx);
+        v->pFormatCtx = NULL;
+    }
+    if (v->data[0]) {
+        av_freep(&v->data[0]);
+    }
+    if (v) {
+        free(v);
+        v = NULL;
+    }
+    fprintf(stdout, "FFmpeg video quit\n");
+}
+
+/* Init ffmpeg_video source
+ * file: path to open
+ * format: AV_PIX_FMT_GRAY8, AV_PIX_FMT_RGB24, or AV_PIX_FMT_YUV420P
+ * Returns ffmpeg_video context on success, NULL otherwise
  */
-
-void ffmpeg_video_quit(ffmpeg_video *cur) {
-    if (!cur) return;
-    if (cur->Sctx) sws_freeContext(cur->Sctx);
-
-    if (cur->pRaw) av_frame_free(&cur->pRaw);
-    if (cur->pDat) av_frame_free(&cur->pDat);
-
-    if (cur->pCtx) avcodec_close(cur->pCtx);
-    if (cur->pFormatCtx) avformat_close_input(&cur->pFormatCtx);
-
-    // Ensure data is only freed if it was allocated
-    if (cur->data[0]) {
-        printf("Freeing cur->data[0] at %p\n", cur->data[0]);
-        av_freep(&cur->data[0]);
-        cur->data[0] = NULL;
+ffmpeg_video* ffmpeg_video_init(const char *fname, int format) {
+    int ret;
+    ffmpeg_video *v = NULL;
+    v = (ffmpeg_video*)malloc(sizeof(ffmpeg_video));
+    if (!v) {
+        fprintf(stderr, "Could not allocate ffmpeg_video struct\n");
+        return NULL;
     }
-    free(cur);
-}
+    memset(v, 0, sizeof(ffmpeg_video));
 
-ffmpeg_video *ffmpeg_video_init(const char *fname, int format) {
-    int i = 0;
-    ffmpeg_video *ret = NULL;
     maybeInit();
+    fprintf(stdout, "Entering ffmpeg_video_init\n");
 
-    printf("Entering ffmpeg_video_init\n");
-    fflush(stdout);
-
-    ret = (ffmpeg_video*)malloc(sizeof(ffmpeg_video));
-    if (!ret) {
-        printf("Error allocating ffmpeg_video struct\n");
-        goto Error;
-    }
-    memset(ret, 0, sizeof(ffmpeg_video));
-    ret->pix_fmt = format;
-
-    AVDictionary* options = NULL;
-    av_dict_set(&options, "pixel_format", "gray8", 0);
-    ret->pFormatCtx = NULL;
-    if (avformat_open_input(&ret->pFormatCtx, fname, NULL, &options) < 0) {
-        printf("Error opening input\n");
-        goto Error;
-    }
-    av_dict_free(&options);
-
-    if (avformat_find_stream_info(ret->pFormatCtx, NULL) < 0) {
-        printf("Error finding stream info\n");
+    // Open video file
+    if (avformat_open_input(&v->pFormatCtx, fname, NULL, NULL) != 0) {
+        fprintf(stderr, "Could not open file: %s\n", fname);
         goto Error;
     }
 
-    ret->videoStream = av_find_best_stream(ret->pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
-    if (ret->videoStream < 0) {
-        printf("Error finding best stream\n");
+    // Retrieve stream information
+    if (avformat_find_stream_info(v->pFormatCtx, NULL) < 0) {
+        fprintf(stderr, "Could not find stream information\n");
         goto Error;
     }
 
-    AVStream* st = ret->pFormatCtx->streams[ret->videoStream];
-    ret->pCodec = avcodec_find_decoder(st->codecpar->codec_id);
-    if (!ret->pCodec) {
-        printf("Error finding decoder\n");
+    // Find the first video stream
+    v->videoStream = -1;
+    for (int i = 0; i < v->pFormatCtx->nb_streams; i++) {
+        if (v->pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            v->videoStream = i;
+            break;
+        }
+    }
+
+    if (v->videoStream == -1) {
+        fprintf(stderr, "Did not find a video stream\n");
         goto Error;
     }
 
-    ret->pCtx = avcodec_alloc_context3(ret->pCodec);
-    if (!ret->pCtx) {
-        printf("Error allocating codec context\n");
-        goto Error;
-    }
-    if (avcodec_parameters_to_context(ret->pCtx, st->codecpar) < 0) {
-        printf("Error copying codec parameters to context\n");
-        goto Error;
-    }
-    if (avcodec_open2(ret->pCtx, ret->pCodec, NULL) < 0) {
-        printf("Error opening codec\n");
+    // Get a pointer to the codec context for the video stream
+    v->pCodec = avcodec_find_decoder(v->pFormatCtx->streams[v->videoStream]->codecpar->codec_id);
+    if (v->pCodec == NULL) {
+        fprintf(stderr, "Unsupported codec!\n");
         goto Error;
     }
 
-    ret->width = ret->pCtx->width;
-    ret->height = ret->pCtx->height;
-
-    // Print parameters before calling av_image_alloc
-    printf("Calling av_image_alloc with width=%d, height=%d, pix_fmt=%d\n", ret->width, ret->height, ret->pix_fmt);
-
-    ret->numBytes = av_image_alloc(ret->data, ret->linesize, ret->width, ret->height, ret->pix_fmt, 1);
-    if (ret->numBytes < 0) {
-        printf("Error allocating image: %d\n", ret->numBytes);
+    v->pCtx = avcodec_alloc_context3(v->pCodec);
+    if (avcodec_parameters_to_context(v->pCtx, v->pFormatCtx->streams[v->videoStream]->codecpar) < 0) {
+        fprintf(stderr, "Couldn't copy codec context\n");
         goto Error;
     }
 
-    ret->numFrames = DURATION(ret->pFormatCtx);
-
-    /* Init buffers */
-    ret->pRaw = av_frame_alloc();
-    ret->pDat = av_frame_alloc();
-    ret->pDat->format = ret->pix_fmt;
-    ret->pDat->width = ret->width;
-    ret->pDat->height = ret->height;
-    if (av_frame_get_buffer(ret->pDat, 0) < 0) {
-        printf("Error getting frame buffer\n");
+    // Open codec
+    if (avcodec_open2(v->pCtx, v->pCodec, NULL) < 0) {
+        fprintf(stderr, "Could not open codec\n");
         goto Error;
     }
 
-    /* Init scale & convert */
-    ret->Sctx = sws_getContext(ret->pCtx->width, ret->pCtx->height, ret->pCtx->pix_fmt, ret->width, ret->height, ret->pix_fmt, SWS_BICUBIC, NULL, NULL, NULL);
-    if (!ret->Sctx) {
-        printf("Error getting sws context\n");
+    // Allocate video frame
+    v->pRaw = av_frame_alloc();
+    if (!v->pRaw) {
+        fprintf(stderr, "Could not allocate raw frame\n");
         goto Error;
     }
 
-    av_dump_format(ret->pFormatCtx, 0, fname, 0);
+    // Allocate an AVFrame structure
+    v->pDat = av_frame_alloc();
+    if (!v->pDat) {
+        fprintf(stderr, "Could not allocate frame\n");
+        goto Error;
+    }
 
-    // setup currentImage
-    ret->currentImage.kind = 1;
-    ret->currentImage.width = ret->width;
-    ret->currentImage.height = ret->height;
-    ret->currentImage.text = "\0";
-    ret->currentImage.array = ret->data[0];
+    // Determine required buffer size and allocate buffer
+    v->width = v->pCtx->width;
+    v->height = v->pCtx->height;
+    v->pix_fmt = AV_PIX_FMT_RGB24; // Ensure the pixel format is supported
 
-    ret->last = -1;
-    return ret;
+    v->numBytes = av_image_alloc(v->data, v->linesize, v->width, v->height, v->pix_fmt, 32);
+    if (v->numBytes < 0) {
+        fprintf(stderr, "Error allocating image: %d\n", v->numBytes);
+        goto Error;
+    }
+
+    fprintf(stdout, "Image allocated with buffer size %d\n", v->numBytes);
+    return v;
 
 Error:
-    // Ensure ret->data is not freed if it was not allocated successfully
-    if (ret && ret->data[0]) {
-        av_freep(&ret->data[0]);
-        ret->data[0] = NULL;
-    }
-    ffmpeg_video_quit(ret);
+    ffmpeg_video_quit(v);
     return NULL;
 }
+
 
 int ffmpeg_video_bytes_per_frame( ffmpeg_video* v )
 {
@@ -371,50 +341,88 @@ void ffmpeg_video_debug_ppm( ffmpeg_video *cur, char *file )
   fclose( out );
 }
 
-
 //--- Wrappers
-
-#include "image_lib.h"
-
 int _handle_open_status(const char *filename, void *c)
 {
-  if(c==NULL)
-  { //warning("Could not open file: %s\n",filename);
-    if(c) ffmpeg_video_quit(c); 
-    return 0;
-  }
-  return 1;
+    if (c == NULL)
+    {
+        fprintf(stderr, "Could not open file: %s\n", filename);
+        if (c) ffmpeg_video_quit(c);
+        return 0;
+    }
+    return 1;
 }
 
-SHARED_EXPORT void *FFMPEG_Open(const char* filename)
-{ void *ctx = NULL;
-  ctx = ffmpeg_video_init(filename,AV_PIX_FMT_GRAY8);
-  if(!_handle_open_status(filename,ctx))
-    return NULL;
-  return ctx; // NULL on error
+SHARED_EXPORT void *FFMPEG_Open(const char *filename)
+{
+    void *ctx = NULL;
+    ctx = ffmpeg_video_init(filename, AV_PIX_FMT_GRAY8);
+    if (!_handle_open_status(filename, ctx))
+        return NULL;
+    return ctx; // NULL on error
 }
 
 SHARED_EXPORT void FFMPEG_Close(void *context)
-{ if(context) ffmpeg_video_quit(context);
+{
+    if (context) ffmpeg_video_quit(context);
 }
 
 SHARED_EXPORT Image *FFMPEG_Fetch(void *context, int iframe)
-{ 
-  ffmpeg_video *v = (ffmpeg_video*)context;
-  TRY(iframe>=0 && iframe<v->numFrames);     // ensure iframe is in bounds
-  if(iframe==v->last+1)
-    TRY(ffmpeg_video_next(v,iframe)>=0);
-  else
-    TRY(ffmpeg_video_seek(v,iframe)>=0);
-  v->last = iframe;
-  v->currentImage.array  = v->data[0];      // just in case the pointer changed...which it didn't
-  return &v->currentImage;
-Error:
-  return NULL;
+{
+    ffmpeg_video *v = (ffmpeg_video *)context;
+    if (iframe < 0 || iframe >= v->numFrames)
+    {
+        fprintf(stderr, "Iframe out of bounds: %d\n", iframe);
+        return NULL; // Ensure iframe is in bounds
+    }
+
+    if (iframe == v->last + 1)
+    {
+        if (ffmpeg_video_next(v, iframe) < 0)
+        {
+            fprintf(stderr, "Failed to get next frame: %d\n", iframe);
+            return NULL;
+        }
+    }
+    else
+    {
+        if (ffmpeg_video_seek(v, iframe) < 0)
+        {
+            fprintf(stderr, "Failed to seek to frame: %d\n", iframe);
+            return NULL;
+        }
+    }
+
+    v->last = iframe;
+    v->currentImage.array = v->data[0]; // Just in case the pointer changed...which it didn't
+    return &v->currentImage;
 }
 
-SHARED_EXPORT unsigned int  FFMPEG_Frame_Count(void* ctx)
-{ return ((ffmpeg_video*)ctx)->numFrames; }
+SHARED_EXPORT unsigned int FFMPEG_Frame_Count(void *ctx)
+{
+    ffmpeg_video *v = (ffmpeg_video *)ctx;
+    int frameCount = 0;
+    int frameFinished;
+    AVPacket packet;
+    AVFrame *frame = av_frame_alloc();
+
+    while (av_read_frame(v->pFormatCtx, &packet) >= 0)
+    {
+        if (packet.stream_index == v->videoStream)
+        {
+            avcodec_decode_video2(v->pCtx, frame, &frameFinished, &packet);
+            if (frameFinished)
+            {
+                frameCount++;
+            }
+        }
+        av_packet_unref(&packet);
+    }
+
+    av_frame_free(&frame);
+    av_seek_frame(v->pFormatCtx, v->videoStream, 0, AVSEEK_FLAG_BACKWARD); // Seek back to the start
+    return frameCount;
+}
 
 //--- UI2.PY interface
 
@@ -447,7 +455,6 @@ int FFMPEG_Read_Stack_Into_Buffer(char *filename, unsigned char *buf)
 Error:
   return 0;
 }
-
 
 #else // HAVE_FFMPEG not defined
 
