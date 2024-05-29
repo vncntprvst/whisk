@@ -31,39 +31,40 @@ sudo apt install g++ gdb make ninja-build rsync zip
 ```
 sudo apt install libavdevice-dev libavfilter-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
 ```
-[alternatively] Build FFmpeg from source:  
-First, install the necessary dependencies:   
-```bash
-sudo apt-get install -y autoconf automake build-essential cmake libass-dev libfreetype6-dev libsdl2-dev libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev pkg-config texinfo zlib1g-dev yasm libx264-dev libx265-dev libnuma-dev libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
-```
-Then, download the FFmpeg source code:  
-```bash
-wget https://FFmpeg.org/releases/ffmpeg-6.0.tar.bz2
-tar xjf ffmpeg-6.0.tar.bz2
-cd ffmpeg-6.0
-```
-Configure and compile FFmpeg with shared libraries (note the `--enable-pic`, `--enable-shared`, and `--disable-static` flags):
-```bash
-CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure \
-  --enable-gpl \
-  --enable-version3 \
-  --enable-nonfree \
-  --enable-small \
-  --enable-libmp3lame \
-  --enable-libx264 \
-  --enable-libx265 \
-  --enable-libvpx \
-  --enable-libfdk-aac \
-  --enable-libopus \
-  --enable-pic \
-  --enable-shared \
-  --disable-static
-make -j$(nproc)
-```
-Finally, install FFmpeg:  
-```bash
-sudo make install
-```
+* -- **Alternatively**  --  
+  Build FFmpeg from source.    
+  First, install the necessary dependencies:   
+  ```bash
+  sudo apt-get install -y autoconf automake build-essential cmake libass-dev libfreetype6-dev libsdl2-dev libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev pkg-config texinfo zlib1g-dev yasm libx264-dev libx265-dev libnuma-dev libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
+  ```
+  Then, download the FFmpeg source code:  
+  ```bash
+  wget https://FFmpeg.org/releases/ffmpeg-6.0.tar.bz2
+  tar xjf ffmpeg-6.0.tar.bz2
+  cd ffmpeg-6.0
+  ```
+  Configure and compile FFmpeg with shared libraries (note the `--enable-pic`, `--enable-shared`, and `--disable-static` flags):
+  ```bash
+  CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure \
+    --enable-gpl \
+    --enable-version3 \
+    --enable-nonfree \
+    --enable-small \
+    --enable-libmp3lame \
+    --enable-libx264 \
+    --enable-libx265 \
+    --enable-libvpx \
+    --enable-libfdk-aac \
+    --enable-libopus \
+    --enable-pic \
+    --enable-shared \
+    --disable-static
+  make -j$(nproc)
+  ```
+  Finally, install FFmpeg:  
+  ```bash
+  sudo make install
+  ```
 
 If cmake still fails because of it can't find FFmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil`, you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/$USER/ffmpeg_build/lib/pkgconfig`.  
 If you built FFmpeg from source, you can add `/usr/local/lib` to `LD_LIBRARY_PATH` and update the dynamic linker cache with `sudo ldconfig`:  
