@@ -12,13 +12,20 @@ set(WHISK_VERSION_MAJOR 1)  # increment for total rewrites
 set(WHISK_VERSION_MINOR 1)  # increment for file format or architectural changes to side packages
 set(WHISK_VERSION_PATCH 0e) # increment for everything else
 
+# Set C standard
+set(CMAKE_C_STANDARD 99)
+
 macro(show v)
   message("${v} is ${${v}}")
 endmacro()
 
-# Adding the -fPIC flag, to ensure that the object files are compiled as position-independent code, which is required for shared library creation. 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC") 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC") 
+# Adding the -fPIC flag, to ensure that the object files are compiled as position-independent code, which is required for shared library creation.
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -g")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")
+# set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
 
 show(CMAKE_C_FLAGS)
 #show(CMAKE_SHARED_LIBRARY_C_FLAGS)
@@ -37,7 +44,7 @@ if(MSVC OR XCODE)
     set(LIBRARY_OUTPUT_PATH ${dir} CACHE PATH "Build directory" FORCE)
   endif()
 endif()
-set(CMAKE_VERBOSE_MAKEFILE 0)
+set(CMAKE_VERBOSE_MAKEFILE 1)
 
 #
 # 3rdParty support
@@ -83,7 +90,7 @@ if(FFMPEG_FOUND)
 endif()
 
 # Mylib: p-file transform
-file(GLOB PFILES  src/*.p)
+file(GLOB PFILES src/*.p)
 file(GLOB MANAGER src/manager.awk)
 include(MylibPreproc)
 mylib_preprocess(MYLIB_SRCS PFILES MANAGER)
@@ -146,9 +153,9 @@ configure_file(
 )
 
 if(WIN32)
-set(LIBM )
+  set(LIBM )
 else()
-set(LIBM m)
+  set(LIBM m)
 endif()
 
 #
@@ -175,6 +182,7 @@ set(COMMON_SRCS
   src/error.c
   src/common.c
   src/compat.c
+  src/utilities.c
 )
 set(COMMON_HDRS
   include/error.h
@@ -184,7 +192,7 @@ set(COMMON_HDRS
 set(COMMON
   ${COMMON_SRCS}
   ${COMMON_HDRS}
-  )
+)
 source_group("Source Files\\Common" FILES ${COMMON_SRCS})
 source_group("Header Files\\Common" FILES ${COMMON_HDRS})
 
@@ -291,7 +299,6 @@ set(MATH
 source_group("Source Files\\Math" FILES ${MATH_SRCS})
 source_group("Header Files\\Math" FILES ${MATH_HDRS})
 
-
 # Trace
 set(TRACE_SRCS
   src/adjust_scan_bias.c
@@ -332,7 +339,6 @@ set(TRAJ
 )
 source_group("Source Files\\" FILES ${TRAJ_SRCS})
 source_group("Header Files\\" FILES ${TRAJ_HDRS})
-
 
 # HMM
 set(HMM_SRCS
@@ -392,7 +398,6 @@ source_group("Source Files\\Qt Generated" FILES
   ${MOC_SRCS}
   ${RCC_SRCS}
 )
-
 
 ###########
 # TARGETS #
@@ -498,15 +503,12 @@ add_dependencies(whiskio_static ParameterParser)
 if(WIN32)
   # On Windows, your MATLAB path is:
   set(MATLAB_ROOT "C:/Program Files/MATLAB/R2022b")
-  
   set(MATLAB_LIBS_DIRECTORY ${MATLAB_ROOT}/bin/win64)  
-
   set(MATLAB_MAT_LIBRARY ${MATLAB_LIBS_DIRECTORY}/libmat.dll)
   set(MATLAB_MEX_LIB ${MATLAB_LIBS_DIRECTORY}/libmex.dll)
 else()
   # Assuming Linux for other cases
   set(MATLAB_ROOT "/usr/local/MATLAB/R2021b")
-
   set(MATLAB_LIBS_DIRECTORY ${MATLAB_ROOT}/bin/glnxa64)  
 
   # message(STATUS "MATLAB_LIBS_DIRECTORY: ${MATLAB_LIBS_DIRECTORY}")
@@ -515,40 +517,40 @@ else()
   set(MATLAB_MEX_LIB ${MATLAB_ROOT}/bin/glnxa64/libmex.so)
 endif()
 
-  find_package(Matlab-rwp)
-  include(MatlabMexMacro)
+find_package(Matlab-rwp)
+include(MatlabMexMacro)
 
   message(STATUS "MATLAB_FOUND: ${MATLAB_FOUND}")
 
-  if(MATLAB_FOUND)
-    add_mex_file(mexLoadMeasurements matlab/src/measurements_io.mex.c)
-    target_link_libraries(mexLoadMeasurements whiskio_static)
-    set_target_properties(mexLoadMeasurements
-        PROPERTIES
-        COMPILE_DEFINITIONS LOAD_MEASUREMENTS
-        )
+if(MATLAB_FOUND)
+  add_mex_file(mexLoadMeasurements matlab/src/measurements_io.mex.c)
+  target_link_libraries(mexLoadMeasurements whiskio_static)
+  set_target_properties(mexLoadMeasurements
+      PROPERTIES
+      COMPILE_DEFINITIONS LOAD_MEASUREMENTS
+  )
 
-    add_mex_file(mexSaveMeasurements matlab/src/measurements_io.mex.c)
-    target_link_libraries(mexSaveMeasurements whiskio_static)
-    set_target_properties(mexSaveMeasurements
-        PROPERTIES
-        COMPILE_DEFINITIONS SAVE_MEASUREMENTS
-        )
+  add_mex_file(mexSaveMeasurements matlab/src/measurements_io.mex.c)
+  target_link_libraries(mexSaveMeasurements whiskio_static)
+  set_target_properties(mexSaveMeasurements
+      PROPERTIES
+      COMPILE_DEFINITIONS SAVE_MEASUREMENTS
+  )
 
-    add_mex_file(mexLoadWhiskers matlab/src/whisker_io.mex.c)
-    target_link_libraries(mexLoadWhiskers whiskio_static)
-    set_target_properties(mexLoadWhiskers
-        PROPERTIES
-        COMPILE_DEFINITIONS LOAD_WHISKERS
-        )
+  add_mex_file(mexLoadWhiskers matlab/src/whisker_io.mex.c)
+  target_link_libraries(mexLoadWhiskers whiskio_static)
+  set_target_properties(mexLoadWhiskers
+      PROPERTIES
+      COMPILE_DEFINITIONS LOAD_WHISKERS
+  )
 
-    add_mex_file(mexSaveWhiskers matlab/src/whisker_io.mex.c)
-    target_link_libraries(mexSaveWhiskers whiskio_static)
-    set_target_properties(mexSaveWhiskers
-        PROPERTIES
-        COMPILE_DEFINITIONS SAVE_WHISKERS
-        )
-  endif()
+  add_mex_file(mexSaveWhiskers matlab/src/whisker_io.mex.c)
+  target_link_libraries(mexSaveWhiskers whiskio_static)
+  set_target_properties(mexSaveWhiskers
+      PROPERTIES
+      COMPILE_DEFINITIONS SAVE_WHISKERS
+  )
+endif()
 
 #
 # EXECUTABLES
@@ -581,12 +583,12 @@ if(QT_FOUND)
     ${FFMPEG_INCLUDE_DIRS}
     ${TRAJ}
     ${HMM}
-    )
+  )
   target_link_libraries(whiski ${QT_LIBRARIES})
   target_link_libraries(whiski PkgConfig::FFMPEG ${LIBM})
   add_dependencies(whiski ParameterParser)
   set_property(TARGET whiski PROPERTY
-      MACOSX_BUNDLE_ICON_FILE whiski.icns)
+    MACOSX_BUNDLE_ICON_FILE whiski.icns)
 
   if(APPLE)
     set(plugin_dest_dir whiski.app/Contents/MacOS)
@@ -596,9 +598,7 @@ if(QT_FOUND)
   if(WIN32)
     set(APPS "\${CMAKE_INSTALL_PREFIX}/bin/whiski.exe")
   endif(WIN32)
-
 endif()
-
 
 # trace
 source_group("Source Files" FILES src/whisk.c)
@@ -1041,7 +1041,6 @@ install(PROGRAMS
     DESTINATION "${DEST_PYTHON}/python"
     COMPONENT python)
 
-
 install(
     TARGETS
       whisk
@@ -1211,26 +1210,3 @@ cpack_add_component(
   INSTALL_TYPES everything_install
   GROUP Extras
 )
-
-
-
-
-
-# APP
-# ---
-#
-# LIB
-# ---
-#
-# TESTS
-# -----
-#
-# TESTED BUT UNUSED
-# -----------------
-# deque.c
-# match.c - Hungarian algorithm
-#
-# EXCLUDE
-# -------
-# distance.c
-# dag.c
