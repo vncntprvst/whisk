@@ -82,36 +82,55 @@
 /*   GUARDED SYSTEM CALLS                                                                */
 /*****************************************************************************************/
 
-void *Guarded_Malloc(size_t size, const char *routine)
-{
+void *Guarded_Malloc(size_t size, const char *msg) {
     void *ptr = malloc(size);
-    CHECK_ALLOC(ptr);
+    if (!ptr) {
+        fprintf(stderr, "Guarded_Malloc failed: %s\n", msg);
+        exit(EXIT_FAILURE);
+    }
+    printf("Guarded_Malloc: Allocated %zu bytes for %s at %p\n", size, msg, ptr);
     return ptr;
 }
 
-void *Guarded_Realloc(void *p, size_t size, const char *routine)
-{
-    void *ptr = realloc(p, size);
-    CHECK_ALLOC(ptr);
-    return ptr;
+// void Guarded_Free(void *ptr, const char *msg) {
+//     if (ptr) {
+//         printf("Guarded_Free: Freeing memory for %s at %p\n", msg, ptr);
+//         free(ptr);
+//     } else {
+//         fprintf(stderr, "Guarded_Free: Attempted to free a null pointer for %s\n", msg);
+//     }
+// }
+
+void *Guarded_Realloc(void *p, size_t size, const char *routine) {
+    void *new_p = realloc(p, size);
+    if (new_p == NULL) {
+        fprintf(stderr, "\nError in %s:\n", routine);
+        fprintf(stderr, "   Out of memory\n");
+        exit(1);
+    }
+    printf("Guarded_Realloc: Reallocated memory to %zu bytes in %s, new address: %p, old address: %p\n", size, routine, new_p, p);
+    return new_p;
 }
 
-char *Guarded_Strdup(const char *p, const char *routine)
-{
-    char *ptr = strdup(p);
-    CHECK_ALLOC(ptr);
-    return ptr;
+char *Guarded_Strdup(const char *p, const char *routine) {
+    char *dup = strdup(p);
+    if (dup == NULL) {
+        fprintf(stderr, "\nError in %s:\n", routine);
+        fprintf(stderr, "   Out of memory\n");
+        exit(1);
+    }
+    printf("Guarded_Strdup: Duplicated string in %s, original: %p, duplicate: %p\n", routine, p, dup);
+    return dup;
 }
 
-FILE *Guarded_Fopen(const char *file_name, const char *options, const char *routine)
-{
+FILE *Guarded_Fopen(const char *file_name, const char *options, const char *routine) {
     FILE *f = fopen(file_name, options);
-    if (f == NULL)
-    {
+    if (f == NULL) {
         fprintf(stderr, "\nError in %s:\n", routine);
         fprintf(stderr, "   Cannot open %s\n", file_name);
         exit(1);
     }
+    printf("Guarded_Fopen: Opened file %s in %s with options %s, file pointer: %p\n", file_name, routine, options, f);
     return f;
 }
 
@@ -209,64 +228,59 @@ typedef struct
     Value         def_val;    // Type (NAME,TYPE), and default value if there is one (TYPE)
   } Atom;
 
-static Node *new_node(int label, Node *left, Node *right)
-{ Node *p;
-
-  p = (Node *) Guarded_Malloc(sizeof(Node),"Process_Arguments");
-  p->label = label;
-  p->left  = left;
-  p->right = right;
-  switch (p->label)
-  { case CAT:
-      p->empty = left->empty && right->empty;
-      p->loops = left->loops || right->loops;
-      break;
-    case OR:
-      p->empty = left->empty || right->empty;
-      p->loops = left->loops || right->loops;
-      break;
-    case OPT:
-      p->empty = 1;
-      p->loops = left->loops;
-      break;
-    case PLUS:
-      p->empty = left->empty;
-      p->loops = 1;
-      break;
-    case SYN:
-      p->empty = left->empty;
-      p->loops = left->loops;
-      break;
-  }
-  return (p);
-}
-
-static Node *new_atom(int label, char *name, int len, Value *type_def, int line, int hasd)
-{ Atom *p;
-
-  p = (Atom *) Guarded_Malloc(sizeof(Atom),"Process_Arguments");
-  p->label   = label;
-  p->empty   = (label == WHITE);
-  p->loops   = 0;
-  p->name    = name;
-  p->nlen    = len;
-  p->line    = line;
-  p->has_def = hasd;
-  if (type_def != NULL)
-    p->def_val = *type_def;
-  if (label == TEXT || label == LIST || label == DASH)
-    { int i, j;
-
-      for (i = j = 0; i < len; i++, j++)
-        if (name[i] == ESCAPE_CHAR)
-          i += 1;
-      p->slen = j;
+static Node *new_node(int label, Node *left, Node *right) {
+    Node *p;
+    p = (Node *) Guarded_Malloc(sizeof(Node), "Process_Arguments");
+    p->label = label;
+    p->left  = left;
+    p->right = right;
+    switch (p->label) {
+        case CAT:
+            p->empty = left->empty && right->empty;
+            p->loops = left->loops || right->loops;
+            break;
+        case OR:
+            p->empty = left->empty || right->empty;
+            p->loops = left->loops || right->loops;
+            break;
+        case OPT:
+            p->empty = 1;
+            p->loops = left->loops;
+            break;
+        case PLUS:
+            p->empty = left->empty;
+            p->loops = 1;
+            break;
+        case SYN:
+            p->empty = left->empty;
+            p->loops = left->loops;
+            break;
     }
-  else
-    p->slen = 0;
-  return ((Node *) p);
+    return (p);
 }
 
+static Node *new_atom(int label, char *name, int len, Value *type_def, int line, int hasd) {
+    Atom *p;
+    p = (Atom *) Guarded_Malloc(sizeof(Atom), "Process_Arguments");
+    p->label   = label;
+    p->empty   = (label == WHITE);
+    p->loops   = 0;
+    p->name    = name;
+    p->nlen    = len;
+    p->line    = line;
+    p->has_def = hasd;
+    if (type_def != NULL)
+        p->def_val = *type_def;
+    if (label == TEXT || label == LIST || label == DASH) {
+        int i, j;
+        for (i = j = 0; i < len; i++, j++)
+            if (name[i] == ESCAPE_CHAR)
+                i += 1;
+        p->slen = j;
+    } else
+        p->slen = 0;
+    return ((Node *) p);
+}
 
 /*****************************************************************************************/
 /*   PARSE TREE PRINTER                                                                  */
@@ -734,23 +748,24 @@ typedef struct
     int    longest;   // longest sequence in automaton
   } Automaton;
 
-static State *new_state(Atom *atom, State *loop_start)
-{ State *s;
+static State *new_state(Atom *atom, State *loop_start) {
+    State *s;
 
-  s = (State *) Guarded_Malloc(sizeof(State),"Process_Arguments");
-  s->succ[0] = s->succ[1] = NULL;
-  s->pred[0] = s->pred[1] = NULL;
-  s->loop    = loop_start;
-  s->mark    = 0;
-  s->flags   = 0;
-  s->minlen  = 0;
-  s->maxlen  = 0;
-  s->atom    = atom;
-  s->ulist   = NULL;
+    s = (State *) Guarded_Malloc(sizeof(State), "Process_Arguments");
+    s->succ[0] = s->succ[1] = NULL;
+    s->pred[0] = s->pred[1] = NULL;
+    s->loop    = loop_start;
+    s->mark    = 0;
+    s->flags   = 0;
+    s->minlen  = 0;
+    s->maxlen  = 0;
+    s->atom    = atom;
+    s->ulist   = NULL;
 #ifdef DEBUG
-  s->number  = 0;
+    s->number  = 0;
 #endif
-  return ((State *) s);
+    printf("new_state: Created new state at %p with atom %p and loop_start %p\n", s, atom, loop_start);
+    return ((State *) s);
 }
 
 static Automaton *build_enfa(Node *p, State *loop_start)

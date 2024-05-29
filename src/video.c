@@ -6,6 +6,7 @@
 #include "adjust_scan_bias.h"
 #include "error.h"
 #include <string.h>
+#include <stdio.h>
 
 #define ENDL "\n"
 #if 1
@@ -284,25 +285,45 @@ Error:
   return 0;
 }
 
-Image* video_get(video_t *self, unsigned int iframe, int apply_line_bias_correction)
-{ Image *im;
-  kind_t k = self->kind;
-  TRY( is_valid_kind(k));
-  SILENTTRY( iframe<self->nframes);
-  TRY( im=get_[k](self->fp,iframe));
-  im = Copy_Image(im);
-  if(apply_line_bias_correction)
-  { if(!self->valid_stats)
-      TRY( video_compute_stats(self,20));
 
-    if(self->hstat > self->vstat)
-      image_adjust_scan_bias_h(im,self->hgain);
-    else
-      image_adjust_scan_bias_v(im,self->vgain);
-  }
-  return im;
+Image* video_get(video_t *self, unsigned int iframe, int apply_line_bias_correction)
+{
+    Image *im;
+    kind_t k = self->kind;
+    
+    fprintf(stdout, "video_get: iframe = %u, self->nframes = %u, kind = %d\n", iframe, self->nframes, k);
+    
+    TRY( is_valid_kind(k));
+    
+    if (iframe >= self->nframes) {
+        fprintf(stderr, "video_get: iframe %u out of bounds (self->nframes = %u)\n", iframe, self->nframes);
+        goto Error;
+    }
+
+    im = get_[k](self->fp, iframe);
+    if (!im) {
+        fprintf(stderr, "video_get: Failed to get frame %u\n", iframe);
+        goto Error;
+    }
+    
+    im = Copy_Image(im);
+    
+    if (apply_line_bias_correction) {
+        if (!self->valid_stats) {
+            TRY(video_compute_stats(self, 20));
+        }
+
+        if (self->hstat > self->vstat) {
+            image_adjust_scan_bias_h(im, self->hgain);
+        } else {
+            image_adjust_scan_bias_v(im, self->vgain);
+        }
+    }
+    
+    return im;
+
 Error:
-  return NULL;
+    return NULL;
 }
 
 int is_video(const char *path)

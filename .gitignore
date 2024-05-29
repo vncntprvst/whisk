@@ -21,3 +21,4 @@ dist/
 # Ignore the ffmpeg dll archives
 whisk/bin/ffmpeg_win64_lgpl_shared.zip
 whisk/bin/ffmpeg_linux64_lgpl_shared.tar.xz
+

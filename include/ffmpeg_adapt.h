@@ -30,23 +30,52 @@
  * License along with ffmpeg_test. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #pragma once
 
 #include "config.h"
+#include "image_lib.h"
+
 #ifdef HAVE_FFMPEG
 
 #ifdef _MSC_VER
-#define  _inline
+#define _inline
 #endif
 
-//#include <libavcodec/avcodec.h>
-//#include <libavformat/avformat.h>
-//#include <libswscale/swscale.h>
-//#include <avcodec.h>
-//#include <avformat.h>
-//#include <swscale.h>
-#endif
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libavutil/avutil.h>
+#include <libavutil/imgutils.h>
+#include <libavdevice/avdevice.h>
+#include <libavutil/pixfmt.h>
+#include <libavutil/mem.h>
+
+// Define the struct that will hold the video data
+typedef struct _ffmpeg_video
+{
+    AVFormatContext *pFormatCtx;
+    AVCodecContext *pCtx;
+    const AVCodec *pCodec;
+    AVFrame *pRaw;
+    AVFrame *pDat;
+    uint8_t *data[AV_NUM_DATA_POINTERS];
+    int linesize[AV_NUM_DATA_POINTERS];
+    struct SwsContext *Sctx;
+    int videoStream, width, height;
+    int numBytes;
+    int numFrames;
+    Image currentImage;
+    int last;
+    int pix_fmt;
+} ffmpeg_video;
+
+// ffmpeg_video *ffmpeg_video_init(const char *filename, enum AVPixelFormat pix_fmt);
+// void ffmpeg_video_quit(ffmpeg_video *video);
+
+ffmpeg_video *ffmpeg_video_init(const char *fname, int format);
+void ffmpeg_video_quit(ffmpeg_video *v);
+
+#endif // HAVE_FFMPEG
 
 //--- WHISK INTERFACE
 //--- These function satisfy the abstract interface required by whisk.c's
@@ -63,14 +92,12 @@
 //                                                                              
 //      Not thread safe.                                                        
 
-#include "image_lib.h"
-
-SHARED_EXPORT         void *FFMPEG_Open       (const char* filename);      
-SHARED_EXPORT         void  FFMPEG_Close      (void *context);             
-SHARED_EXPORT        Image *FFMPEG_Fetch      (void *context, int iframe); 
-SHARED_EXPORT unsigned int  FFMPEG_Frame_Count(void*);
+SHARED_EXPORT void *FFMPEG_Open(const char *filename);
+SHARED_EXPORT void FFMPEG_Close(void *context);
+SHARED_EXPORT Image *FFMPEG_Fetch(void *context, int iframe);
+SHARED_EXPORT unsigned int FFMPEG_Frame_Count(void *ctx);
 
 //--- UI2.PY interface
-
 SHARED_EXPORT int FFMPEG_Get_Stack_Dimensions(char *filename, int *width, int *height, int *depth, int *kind);
-SHARED_EXPORT int FFMPEG_Read_Stack_Into_Buffer(char *filename, unsigned char *buf); 
+SHARED_EXPORT int FFMPEG_Read_Stack_Into_Buffer(char *filename, unsigned char *buf);
+                    

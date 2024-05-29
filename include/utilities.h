@@ -85,7 +85,7 @@
  * @param routine The name of the routine requesting memory.
  * @return Pointer to the allocated memory.
  */
-void *Guarded_Malloc(int size, char *routine);
+void *Guarded_Malloc(size_t size, const char *routine);
 
 /**
  * @brief Reallocates memory with error checking.
@@ -95,7 +95,7 @@ void *Guarded_Malloc(int size, char *routine);
  * @param routine The name of the routine requesting memory.
  * @return Pointer to the reallocated memory.
  */
-void *Guarded_Realloc(void *array, int size, char *routine);
+void *Guarded_Realloc(void *array, size_t size, const char *routine);
 
 /**
  * @brief Duplicates a string with error checking.
@@ -104,7 +104,7 @@ void *Guarded_Realloc(void *array, int size, char *routine);
  * @param routine The name of the routine requesting the string duplication.
  * @return Pointer to the duplicated string.
  */
-char *Guarded_Strdup(char *string, char *routine);
+char *Guarded_Strdup(const char *string, const char *routine);
 
 /**
  * @brief Opens a file with error checking.
@@ -114,7 +114,7 @@ char *Guarded_Strdup(char *string, char *routine);
  * @param routine The name of the routine requesting the file open.
  * @return FILE pointer to the opened file.
  */
-FILE *Guarded_Fopen(char *name, char *options, char *routine);
+FILE *Guarded_Fopen(const char *name, const char *options, const char *routine);
 
 /* Process the command line according to 'spec' (See Appendix A for details). Any
    failure results in an error message and the end of execution. One tricky thing

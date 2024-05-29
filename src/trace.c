@@ -119,14 +119,49 @@ static  int outofbounds(int q, int cwidth, int cheight)
 }
 
 SHARED_EXPORT
-Whisker_Seg *Make_Whisker_Seg( int n )
-{ Whisker_Seg *w = (Whisker_Seg*) Guarded_Malloc( sizeof(Whisker_Seg), "Make whisker segment - root." );
-  w->len = n;
-  w->x =      (float*) Guarded_Malloc( sizeof(float) * n, "Make whisker segment - x." );
-  w->y =      (float*) Guarded_Malloc( sizeof(float) * n, "Make whisker segment - y." );
-  w->thick =  (float*) Guarded_Malloc( sizeof(float) * n, "Make whisker segment - thick." );
-  w->scores = (float*) Guarded_Malloc( sizeof(float) * n, "Make whisker segment - scores." );
-  return w;
+Whisker_Seg *Make_Whisker_Seg(int n) {
+    Whisker_Seg *w = (Whisker_Seg*) Guarded_Malloc(sizeof(Whisker_Seg), "Make whisker segment - root.");
+    if (!w) {
+        fprintf(stderr, "Error: Failed to allocate memory for whisker segment root.\n");
+        return NULL;
+    }
+
+    w->len = n;
+    w->x = (float*) Guarded_Malloc(sizeof(float) * n, "Make whisker segment - x.");
+    if (!w->x) {
+        fprintf(stderr, "Error: Failed to allocate memory for whisker segment x.\n");
+        free(w);
+        return NULL;
+    }
+
+    w->y = (float*) Guarded_Malloc(sizeof(float) * n, "Make whisker segment - y.");
+    if (!w->y) {
+        fprintf(stderr, "Error: Failed to allocate memory for whisker segment y.\n");
+        free(w->x);
+        free(w);
+        return NULL;
+    }
+
+    w->thick = (float*) Guarded_Malloc(sizeof(float) * n, "Make whisker segment - thick.");
+    if (!w->thick) {
+        fprintf(stderr, "Error: Failed to allocate memory for whisker segment thick.\n");
+        free(w->y);
+        free(w->x);
+        free(w);
+        return NULL;
+    }
+
+    w->scores = (float*) Guarded_Malloc(sizeof(float) * n, "Make whisker segment - scores.");
+    if (!w->scores) {
+        fprintf(stderr, "Error: Failed to allocate memory for whisker segment scores.\n");
+        free(w->thick);
+        free(w->y);
+        free(w->x);
+        free(w);
+        return NULL;
+    }
+
+    return w;
 }
 
 SHARED_EXPORT
@@ -512,61 +547,74 @@ Whisker_Seg *find_segments( int iFrame, Image *image, Image *bg, int *pnseg )
       }
     }
 
-    { typedef struct { int idx; float score; } seedrecord;
-      seedrecord *scores = malloc(sizeof(seedrecord)*nseeds);
+    { 
+      typedef struct { int idx; float score; } seedrecord;
+      
+      // Allocate memory for seedrecord array
+      seedrecord *scores = malloc(sizeof(seedrecord) * nseeds);
+      CHECK_ALLOC(scores);
+
       int stride = image->width;
       Line_Params line;
       int j = 0;
 
       i = sarea;
-      while( i-- )
-      { if( maska[i]==1 )
-        { Seed seed = { i%stride,
-              i/stride,
-              (int) 100 * cos( tha[i] ),
-              (int) 100 * sin( tha[i] ) };
+      while (i--) {
+        if (maska[i] == 1) {
+          Seed seed = { 
+            i % stride,
+            i / stride,
+            (int) 100 * cos(tha[i]),
+            (int) 100 * sin(tha[i])
+          };
 
-          line = line_param_from_seed( &seed );
+          line = line_param_from_seed(&seed);
 
-          scores[j  ].score = eval_line( &line, image, i );
-
-          scores[j  ].idx   = i;
+          scores[j].score = eval_line(&line, image, i);
+          scores[j].idx = i;
           j++;
         }
       }
 
-      qsort(scores, nseeds, sizeof(seedrecord), &_cmp_seed_scores );
+      // Sort scores based on _cmp_seed_scores
+      qsort(scores, nseeds, sizeof(seedrecord), &_cmp_seed_scores);
 
       j = nseeds;
-      while(j--)
-      { i = scores[j].idx;
-        if( maska[i]==1 )
-        { Whisker_Seg *w;
-          Seed seed = { i%stride,
-            i/stride,
-            (int) 100 * cos( tha[i] ),
-            (int) 100 * sin( tha[i] ) };
+      while (j--) {
+        i = scores[j].idx;
+        if (maska[i] == 1) {
+          Whisker_Seg *w;
+          Seed seed = {
+            i % stride,
+            i / stride,
+            (int) 100 * cos(tha[i]),
+            (int) 100 * sin(tha[i])
+          };
 
-          w = trace_whisker( &seed, image );
-          if(!w)
-          { SWAP(seed.xdir,seed.ydir);
-            w = trace_whisker( &seed, image ); // try again at a right angle...sometimes when we're off by one the slope estimate is perpendicular to the whisker.
+          w = trace_whisker(&seed, image);
+          if (!w) {
+            SWAP(seed.xdir, seed.ydir);
+            w = trace_whisker(&seed, image); // Try again at a right angle
           }
-          if (w != NULL)
-          { wsegs = (Whisker_Seg*) request_storage( wsegs, &max_segs, sizeof(Whisker_Seg), n_segs+1, "find segments" );
+
+          if (w != NULL) {
+            // Request storage for wsegs and update its attributes
+            wsegs = (Whisker_Seg *)request_storage(wsegs, &max_segs, sizeof(Whisker_Seg), n_segs + 1, "find segments");
             w->time = iFrame;
-            w->id  = n_segs;
+            w->id = n_segs;
             wsegs[n_segs++] = *w;
-            draw_whisker( mask , w, SEED_SIZE_PX/2.0, 3 ); // "color" set to 3 for debug, could be anything but 1
+            draw_whisker(mask, w, SEED_SIZE_PX / 2.0, 3); // "color" set to 3 for debug
             free(w);
-#ifdef DEBUG_SEEDING_MASK
+    #ifdef DEBUG_SEEDING_MASK
             //Write_Image("trace_seed_mask.tif",mask);
-            Write_Image( "trace_seed_image.tif", image );
+            Write_Image("trace_seed_image.tif", image);
             breakme();
-#endif
+    #endif
           } // ... if w
         } // ... if maska[i]
       }
+
+      // Free allocated memory for scores
       free(scores);
     }
   } // end context

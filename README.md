@@ -17,7 +17,7 @@ Building
 ========
 Updated build files are found [here](https://github.com/vncntprvst/whisk/).  
 This package uses a [Cmake][] based build system.  The basic build steps are similar under Windows, OS X, and Linux.  
-The build requirements are `cmake` `gcc-12.2+` `ffmpeg`.
+The build requirements are `cmake` `gcc-12.2+` `FFmpeg`.
 
 For Unix-y systems:
 
@@ -27,26 +27,37 @@ sudo apt update
 sudo apt install cmake pkg-config bison gawk
 sudo apt install g++ gdb make ninja-build rsync zip
 ```
-2. Install ffmpeg libraries
+2. Install FFmpeg libraries
 ```
 sudo apt install libavdevice-dev libavfilter-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
 ```
-If cmake still fails because of it can't find ffmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil`, you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/$USER/ffmpeg_build/lib/pkgconfig`.
-
-[optional] Build ffmpeg from source:  
+[optional/alternative] Build FFmpeg from source:  
 First, install the necessary dependencies:   
 ```bash
 sudo apt-get install -y autoconf automake build-essential cmake libass-dev libfreetype6-dev libsdl2-dev libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev pkg-config texinfo zlib1g-dev yasm libx264-dev libx265-dev libnuma-dev libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
 ```
 Then, download the FFmpeg source code:  
 ```bash
-wget https://ffmpeg.org/releases/ffmpeg-6.0.tar.bz2
-tar xjf ffmpeg-6.0.tar.bz2
-cd ffmpeg-6.0
+wget https://FFmpeg.org/releases/FFmpeg-6.0.tar.bz2
+tar xjf FFmpeg-6.0.tar.bz2
+cd FFmpeg-6.0
 ```
-Configure and compile FFmpeg:  
+Configure and compile FFmpeg with shared libraries: 
 ```bash
-./configure --enable-gpl --enable-version3 --enable-nonfree --enable-small --enable-libmp3lame --enable-libx264 --enable-libx265 --enable-libvpx --enable-libfdk-aac --enable-libopus
+CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure \
+  --enable-gpl \
+  --enable-version3 \
+  --enable-nonfree \
+  --enable-small \
+  --enable-libmp3lame \
+  --enable-libx264 \
+  --enable-libx265 \
+  --enable-libvpx \
+  --enable-libfdk-aac \
+  --enable-libopus \
+  --enable-pic \
+  --enable-shared \
+  --disable-static
 make -j$(nproc)
 ```
 Finally, install FFmpeg:  
@@ -54,6 +65,14 @@ Finally, install FFmpeg:
 sudo make install
 ```
 
+If cmake still fails because of it can't find FFmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil`, you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/$USER/ffmpeg_build/lib/pkgconfig`.  
+If you built FFmpeg from source, you can add `/usr/local/lib` to `LD_LIBRARY_PATH` and update the dynamic linker cache with `sudo ldconfig`:  
+```bash
+echo 'export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+source ~/.bashrc
+echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/FFmpeg.conf
+sudo ldconfig
+```
 
 3. Install Qt5 and Qt5Svg
     * `sudo apt install qtbase5-dev libqt5svg5-dev` 
@@ -81,8 +100,8 @@ For Windows systems (ignore VS Code instructions if not using it):
 * Install the Mingw-w64 toolchain: `pacman -S --needed base-devel mingw-w64-x86_64-toolchain`
 * Install cmake and generators (ninja ... make is installed with the toolchain above, ): `pacman -S mingw-w64-x86_64-cmake`
 * Install the FFmpeg libraries for the 64-bit MinGW toolchain: 
-     To install the most recent version instead, run `pacman -S mingw-w64-x86_64-ffmpeg`.  
-     If using python (see packages `whisk-janelia` and `whiskiwrap`), you need to ensure compatibility between the ffmpeg version used to build whisk (currently, version 6.0) and the ffmpeg library files that python will call with the package `ctypes`. Tarballs are available for download on [MSYS2's package page](https://packages.msys2.org/package/mingw-w64-x86_64-ffmpeg), or run `wget https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-ffmpeg-6.0-7-any.pkg.tar.zst`. Then, install the package with  `pacman -U mingw-w64-x86_64-ffmpeg-6.0-7-any.pkg.tar.zst`.    
+     To install the most recent version instead, run `pacman -S mingw-w64-x86_64-FFmpeg`.  
+     If using python (see packages `whisk-janelia` and `whiskiwrap`), you need to ensure compatibility between the FFmpeg version used to build whisk (currently, version 6.0) and the FFmpeg library files that python will call with the package `ctypes`. Tarballs are available for download on [MSYS2's package page](https://packages.msys2.org/package/mingw-w64-x86_64-FFmpeg), or run `wget https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-FFmpeg-6.0-7-any.pkg.tar.zst`. Then, install the package with  `pacman -U mingw-w64-x86_64-FFmpeg-6.0-7-any.pkg.tar.zst`.    
 * Update the PKG_CONFIG_PATH environment variable to include the path to the FFmpeg library .pc files. In the MSYS2 terminal, run: `export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/mingw64/lib/pkgconfig`, and add it to `~/.bashrc` as well to make this change permanent.
 5. Open a terminal, navigate to the `whisk` repository directory.
 6. Run the following commands:  
