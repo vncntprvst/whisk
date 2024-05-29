@@ -38,9 +38,9 @@ sudo apt-get install -y autoconf automake build-essential cmake libass-dev libfr
 ```
 Then, download the FFmpeg source code:  
 ```bash
-wget https://FFmpeg.org/releases/FFmpeg-6.0.tar.bz2
-tar xjf FFmpeg-6.0.tar.bz2
-cd FFmpeg-6.0
+wget https://FFmpeg.org/releases/ffmpeg-6.0.tar.bz2
+tar xjf ffmpeg-6.0.tar.bz2
+cd ffmpeg-6.0
 ```
 Configure and compile FFmpeg with shared libraries (note the `--enable-pic`, `--enable-shared`, and `--disable-static` flags):
 ```bash
