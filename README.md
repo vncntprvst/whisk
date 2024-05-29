@@ -3,7 +3,7 @@ Janelia Whisker tracking
 Fully automated tracking of single rows of whiskers in high-speed video.  
 
 The original source code repository is https://github.com/nclack/whisk/.    
-The [original website](http://openwiki.janelia.org/wiki/display/MyersLab/Whisker+Tracking) for this program is not accessible anymore, but it has been duplicated [here](https://wikis.janelia.org/display/WT/Whisker+Tracking).
+The [original website](http://openwiki.janelia.org/wiki/display/MyersLab/Whisker+Tracking) for this program is now accessible [here](https://wikis.janelia.org/display/WT/Whisker+Tracking).
 A copy of the instructions and the tutorial are available [here](https://github.com/wanglab-neuro/whisk-dockerfile/tree/main/context/wiki).
 
 Downloading
@@ -24,17 +24,43 @@ For Unix-y systems:
 1. Install CMake 2.8+, a C++ compiler and other build tools.
 ```
 sudo apt update
-sudo cmake pkg-config bison gawk
+sudo apt install cmake pkg-config bison gawk
 sudo apt install g++ gdb make ninja-build rsync zip
 ```
 2. Install ffmpeg libraries
 ```
 sudo apt install libavdevice-dev libavfilter-dev libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
 ```
-If cmake still fails because of it can't find ffmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil`, you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/jovyan/ffmpeg_build/lib/pkgconfig`.
+If cmake still fails because of it can't find ffmpeg libraries `libavdevice;libavfilter;libavformat;libavcodec;libswresample;libswscale;libavutil`, you need to have them somewhere, and make it find it, e.g. `export PKG_CONFIG_PATH=/home/$USER/ffmpeg_build/lib/pkgconfig`.
 
-3. Start in the root of the source directory (in a terminal).
-6. Type these commands (or use [VSCode's CMake extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools) to configure and build):
+[optional] Build ffmpeg from source:  
+First, install the necessary dependencies:   
+```bash
+sudo apt-get install -y autoconf automake build-essential cmake libass-dev libfreetype6-dev libsdl2-dev libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev pkg-config texinfo zlib1g-dev yasm libx264-dev libx265-dev libnuma-dev libvpx-dev libfdk-aac-dev libmp3lame-dev libopus-dev
+```
+Then, download the FFmpeg source code:  
+```bash
+wget https://ffmpeg.org/releases/ffmpeg-6.0.tar.bz2
+tar xjf ffmpeg-6.0.tar.bz2
+cd ffmpeg-6.0
+```
+Configure and compile FFmpeg:  
+```bash
+./configure --enable-gpl --enable-version3 --enable-nonfree --enable-small --enable-libmp3lame --enable-libx264 --enable-libx265 --enable-libvpx --enable-libfdk-aac --enable-libopus
+make -j$(nproc)
+```
+Finally, install FFmpeg:  
+```bash
+sudo make install
+```
+
+
+3. Install Qt5 and Qt5Svg
+    * `sudo apt install qtbase5-dev libqt5svg5-dev` 
+    * Check installation with `qmake -v`.
+    * Set `Qt5_DIR` and `Qt5Svg_DIR` environment variables if cmake asks for it.
+4. Start in the root of the source directory (in a terminal).
+5. Type these commands (or use [VSCode's CMake extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools) to configure and build):
 ```
     mkdir build
     cd build
