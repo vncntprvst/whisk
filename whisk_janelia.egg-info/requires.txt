@@ -1,0 +1,3 @@
+
+[ffmpeg]
+requests<3,>=2.24
