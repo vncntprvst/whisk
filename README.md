@@ -8,9 +8,13 @@ A copy of the instructions and the tutorial are available [here](https://github.
 
 Downloading
 ===========
-Pre-built binaries are available on [this forked repository](https://github.com/vncntprvst/whisk/tree/master/whisk/bin).  
+Pre-built binaries are available on [this forked repository](https://github.com/vncntprvst/whisk/tree/master/whisk/bin). Binaries are built against FFmpeg 6.0. 
 Binary and library file can simply be installed from Pypi, with `pip install whisk-janelia`.  
-> Note that on Linux, if not root, you may need to make some of the binary files executable, e.g. `chmod +x /path/to/whisk/bin/trace`. You can also use the post-installation script `update_permissions.py` to make all files in the `whisk/bin` directory executable.
+> Note that on Linux, if not root, you may need to make some of the binary files executable, e.g. `chmod +x /path/to/whisk/bin/trace`. You can also use the post-installation script `update_permissions.py` to make all files in the `whisk/bin` directory executable.  
+Check which version of FFmpeg is installed, just type `ffmpeg` in a terminal.  
+You can also check which version of required libraries like `libavdevice` are installed with:  
+`for dir in $(echo $LD_LIBRARY_PATH | tr ":" "\n"); do find $dir -name 'libavdevice.so*' 2>/dev/null; done`.  
+
 See also the [README on the whisk-dockerfile repo](https://github.com/wanglab-neuro/whisk-dockerfile), in `whisk-base` section.  
 
 Building
