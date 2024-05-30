@@ -42,7 +42,7 @@ print("WARNING: This package requires ffmpeg and associated dynamic libraries. \
 
 setup(
     name='whisk-janelia',
-    version='1.1.9',
+    version='1.1.10',
     author='Nathan Clack',
     maintainer=', '.join(['clackn','cxrodgers','mitchclough','vncntprvst']),
     url='https://github.com/nclack/whisk/',
