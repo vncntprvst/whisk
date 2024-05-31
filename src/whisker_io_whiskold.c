@@ -50,7 +50,7 @@ int is_file_whisk_old( const char* filename)
 FILE* open_whisk_old(const char* filename, const char* mode)
 { FILE *fp;
   if( strncmp(mode,"w",1)==0 )
-  { warning("This format is depricated and writing is not supported.\n");
+  { warning("This format is deprecated and writing is not supported.\n");
     return NULL;
   } else if( strncmp(mode,"r",1)==0 )
   { fp = fopen(filename,"r");

@@ -150,11 +150,11 @@ char *default_params[] = {
   "HALF_SPACE_ASSYMETRY_THRESH    0.25         // (between 0 and 1)  1 is completely insensitive to asymmetry\\n",
   "HALF_SPACE_TUNNELING_MAX_MOVES 50           // (pixels)  This should be the largest size of an occluding area to cross\\n",
   "\\n",                                                                                                                                                                                                                
-  "FRAME_DELTA                    1            // [depricated?] used in compute_zone to look for moving objects\\n",
-  "DUPLICATE_THRESHOLD            5.0          // [depricated?]\\n",
-  "MIN_LENGTH                     20           // [depricated?]           If span of object is not 20 pixels will not use as a seed\\n",
-  "MIN_LENSQR                     100          // [depricated?]           (MIN_LENGTH/2)^2\\n",
-  "MIN_LENPRJ                     14           // [depricated?] [unused]  floor(MIN_LENGTH/sqrt(2))\\n",
+  "FRAME_DELTA                    1            // [deprecated?] used in compute_zone to look for moving objects\\n",
+  "DUPLICATE_THRESHOLD            5.0          // [deprecated?]\\n",
+  "MIN_LENGTH                     20           // [deprecated?]           If span of object is not 20 pixels will not use as a seed\\n",
+  "MIN_LENSQR                     100          // [deprecated?]           (MIN_LENGTH/2)^2\\n",
+  "MIN_LENPRJ                     14           // [deprecated?] [unused]  floor(MIN_LENGTH/sqrt(2))\\n",
   NULL,
 };
 

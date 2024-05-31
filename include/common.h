@@ -54,7 +54,7 @@
   while( (th)    >= M_PI )        \
     (th)    -=   2*M_PI;
 
-#define DEPRICATED error("Function at %s:%d was marked for removal.\n",__FILE__,__LINE__)
+#define DEPRECATED error("Function at %s:%d was marked for removal.\n",__FILE__,__LINE__)
 
 /************************************************************************
  * Example

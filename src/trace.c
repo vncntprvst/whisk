@@ -651,7 +651,7 @@ Zone *compute_zone(Stack *movie)
   int    w, h, d, a;
   Image *mask;
 
-  DEPRICATED;
+  DEPRECATED;
 
   w = movie->width;
   h = movie->height;
@@ -849,7 +849,7 @@ SHARED_EXPORT
 Array *get_harmonic_line_detector_bank(Range *off, Range *wid, Range *ang) // FIXME: Bad name - should be labelled line detectors
 { static Array *bank = (NULL);
   static Range o,a,w;
-  DEPRICATED;
+  DEPRECATED;
   // [ ] if this gets put back into active duty - need to adapt to
   //      get_line_detector_bank pattern
   if( !bank )
@@ -885,7 +885,7 @@ float integrate_harmonic_mean_by_labels( uint8 *im, float* w, int *pxlist, int n
   const float  sigmin = 255.0;
   int j,i;
 
-  DEPRICATED;
+  DEPRECATED;
   i = npx; 
   while( i-- )
   { float u = w[ pxlist[2*i+1] ];
@@ -951,7 +951,7 @@ float integrate_special_by_labels( uint8 *im, float *w, int *pxlist, int npx )
   int j,i = npx;
   float norm = 0.0;
 
-  DEPRICATED;
+  DEPRECATED;
 
   while( i-- )
   { float u = w[ pxlist[2*i+1] ];
@@ -1027,7 +1027,7 @@ float *get_nearest_from_curved_line_detector_bank(float offset, float width, flo
 { int o,a,w;
   Range orng, arng, wrng;
   Array *bank = get_curved_line_detector_bank( &orng, &wrng, &arng );
-  DEPRICATED;
+  DEPRECATED;
   if( !is_small_angle( angle ) )  // if large angle then transpose
   { angle = 3.0*M_PI/2.0 - angle; //   to small ones ( <45deg )
   }
