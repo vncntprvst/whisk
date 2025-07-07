@@ -36,10 +36,40 @@ class CustomPostInstall:
         # Update the permissions of the files in the 'bin' directory
         bin_dir = os.path.join(site_packages_dir, 'whisk', 'bin')
         if os.path.exists(bin_dir):
-            # Only fix permissions if this is not a development install from source
-            # Check if the bin_dir is the same as the source bin directory
+            # Skip permission changes for development installs
             source_bin_dir = os.path.join(os.path.dirname(__file__), 'whisk', 'bin')
-            if os.path.abspath(bin_dir) != os.path.abspath(source_bin_dir):
+            
+            # Check if this is a development install by comparing paths or checking if files are symlinks
+            is_dev_install = False
+            
+            # Method 1: Check if the paths are the same
+            if os.path.abspath(bin_dir) == os.path.abspath(source_bin_dir):
+                is_dev_install = True
+            else:
+                # Method 2: Check if any file in bin_dir is a symlink pointing to source
+                try:
+                    for filename in os.listdir(bin_dir):
+                        file_path = os.path.join(bin_dir, filename)
+                        if os.path.islink(file_path):
+                            link_target = os.readlink(file_path)
+                            if os.path.abspath(link_target).startswith(os.path.abspath(source_bin_dir)):
+                                is_dev_install = True
+                                break
+                except OSError:
+                    pass
+                
+                # Method 3: Check if the parent directory contains a .egg-link file (development install indicator)
+                if not is_dev_install:
+                    whisk_dir = os.path.join(site_packages_dir, 'whisk')
+                    parent_dir = os.path.dirname(whisk_dir)
+                    for item in os.listdir(parent_dir):
+                        if item.endswith('.egg-link') and 'whisk' in item:
+                            is_dev_install = True
+                            break
+            
+            if is_dev_install:
+                print(f"Skipping permission changes for development install in {bin_dir}")
+            else:
                 print(f"Setting executable permissions for files in {bin_dir}")
                 for filename in os.listdir(bin_dir):
                     file_path = os.path.join(bin_dir, filename)
@@ -49,8 +79,6 @@ class CustomPostInstall:
                             os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
                         except OSError as e:
                             print(f"Warning: Could not set permissions for {file_path}: {e}")
-            else:
-                print(f"Skipping permission changes for development install in {bin_dir}")
 
 class CustomInstall(install, CustomPostInstall):
     def run(self):
