@@ -1,0 +1,8 @@
+[console_scripts]
+whisk-classify = whisk.bin:classify_main
+whisk-measure = whisk.bin:measure_main
+whisk-measurements-convert = whisk.bin:measurements_convert_main
+whisk-reclassify = whisk.bin:reclassify_main
+whisk-report = whisk.bin:report_main
+whisk-trace = whisk.bin:trace_main
+whisk-whisker-convert = whisk.bin:whisker_convert_main

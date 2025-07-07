@@ -36,15 +36,21 @@ class CustomPostInstall:
         # Update the permissions of the files in the 'bin' directory
         bin_dir = os.path.join(site_packages_dir, 'whisk', 'bin')
         if os.path.exists(bin_dir):
-            print(f"Setting executable permissions for files in {bin_dir}")
-            for filename in os.listdir(bin_dir):
-                file_path = os.path.join(bin_dir, filename)
-                if os.path.isfile(file_path):
-                    try:
-                        # For current user: read, write, execute; for group and others: read, execute
-                        os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
-                    except OSError as e:
-                        print(f"Warning: Could not set permissions for {file_path}: {e}")
+            # Only fix permissions if this is not a development install from source
+            # Check if the bin_dir is the same as the source bin directory
+            source_bin_dir = os.path.join(os.path.dirname(__file__), 'whisk', 'bin')
+            if os.path.abspath(bin_dir) != os.path.abspath(source_bin_dir):
+                print(f"Setting executable permissions for files in {bin_dir}")
+                for filename in os.listdir(bin_dir):
+                    file_path = os.path.join(bin_dir, filename)
+                    if os.path.isfile(file_path):
+                        try:
+                            # For current user: read, write, execute; for group and others: read, execute
+                            os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                        except OSError as e:
+                            print(f"Warning: Could not set permissions for {file_path}: {e}")
+            else:
+                print(f"Skipping permission changes for development install in {bin_dir}")
 
 class CustomInstall(install, CustomPostInstall):
     def run(self):

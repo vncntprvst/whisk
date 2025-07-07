@@ -1,1 +1,13 @@
+3rdParty
+dist
+docs
+include
+matlab
+oldbuild
+python
+qtui
+scripts
+src
+test_include
+tests
 whisk

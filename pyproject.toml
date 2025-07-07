@@ -16,11 +16,10 @@ maintainers = [
     {name = "mitchclough"},
     {name = "vncntprvst"},
 ]
-license = {file = "LICENSE.txt"}
+license = "BSD-3-Clause"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
@@ -54,7 +53,7 @@ whisk-reclassify = "whisk.bin:reclassify_main"
 whisk-report = "whisk.bin:report_main"
 
 [tool.setuptools.packages.find]
-exclude = ["whisk.bin.*", "whisk.bin", "pipeline.*", "pipeline", "ui.*", "ui"]
+exclude = ["pipeline.*", "pipeline", "ui.*", "ui"]
 
 [tool.setuptools.package-data]
 whisk = ["bin/*"]
