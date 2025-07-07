@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whisk-janelia"
-version = "1.2.0"
+version = "1.2.1"
 description = "Fully automated tracking of single rows of whiskers in high-speed video."
 readme = "README.md"
 authors = [
