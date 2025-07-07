@@ -1,35 +1,60 @@
 import os, stat
-import distutils.sysconfig
+import sys
+import sysconfig
 from setuptools import setup, find_packages, Command
 from setuptools.command.install import install
+from setuptools.command.develop import develop
 
-class CustomInstall(install):
-    def run(self):
-        super().run()  # Ensure the package is installed first
+class CustomPostInstall:
+    """Common post-installation tasks."""
+    
+    def run_custom_install(self):
+        # Get the site-packages directory properly
+        if hasattr(sysconfig, 'get_paths'):
+            site_packages_dir = sysconfig.get_paths()['purelib']
+        else:
+            import distutils.sysconfig
+            site_packages_dir = distutils.sysconfig.get_python_lib()
         
-        if 'ffmpeg' in self.distribution.extras_require:
+        print(f"Site packages directory: {site_packages_dir}")
+        
+        # Handle FFmpeg installation if requested
+        if hasattr(self.distribution, 'extras_require') and 'ffmpeg' in self.distribution.extras_require:
             print("Downloading ffmpeg DLLs...")
             
-            # Determine the destination directory
-            site_packages_dir = distutils.sysconfig.get_python_lib()
-            print(f"Site packages directory: {site_packages_dir}")
             if os.name == 'posix':
                 whisk_ffmpegbin_dir = os.path.join(site_packages_dir, 'whisk', 'bin', 'ffmpeg_linux64_lgpl_shared')
             elif os.name == 'nt':
                 whisk_ffmpegbin_dir = os.path.join(site_packages_dir, 'whisk', 'bin', 'ffmpeg_win64_lgpl_shared')
             
-            from whisk import whisk_utils
-            whisk_utils.download_and_extract_ffmpeg_dlls(destination_dir=whisk_ffmpegbin_dir)
+            try:
+                from whisk import whisk_utils
+                whisk_utils.download_and_extract_ffmpeg_dlls(destination_dir=whisk_ffmpegbin_dir)
+            except ImportError as e:
+                print(f"Warning: Could not import whisk.whisk_utils: {e}")
 
-        # Update the permissions of the files in the 'bin' directory. This will not be preserved by the wheel used by pip. 
-        # Run the post-install script to set the permissions after installation
+        # Update the permissions of the files in the 'bin' directory
         bin_dir = os.path.join(site_packages_dir, 'whisk', 'bin')
-        for filename in os.listdir(bin_dir):
-            file_path = os.path.join(bin_dir, filename)
-            # For all users: read, write, execute
-            # os.chmod(file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-            # For current user: read, write, execute
-            os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
+        if os.path.exists(bin_dir):
+            print(f"Setting executable permissions for files in {bin_dir}")
+            for filename in os.listdir(bin_dir):
+                file_path = os.path.join(bin_dir, filename)
+                if os.path.isfile(file_path):
+                    try:
+                        # For current user: read, write, execute; for group and others: read, execute
+                        os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                    except OSError as e:
+                        print(f"Warning: Could not set permissions for {file_path}: {e}")
+
+class CustomInstall(install, CustomPostInstall):
+    def run(self):
+        super().run()  # Ensure the package is installed first
+        self.run_custom_install()
+
+class CustomDevelop(develop, CustomPostInstall):
+    def run(self):
+        super().run()  # Ensure the package is installed first
+        self.run_custom_install()
 
 with open('README.md', 'r') as f:
     long_description = f.read()
@@ -42,7 +67,7 @@ print("WARNING: This package requires ffmpeg and associated dynamic libraries. \
 
 setup(
     name='whisk-janelia',
-    version='1.1.10',
+    version='1.2.0',
     author='Nathan Clack',
     maintainer=', '.join(['clackn','cxrodgers','mitchclough','vncntprvst']),
     url='https://github.com/nclack/whisk/',
@@ -60,7 +85,19 @@ setup(
     include_package_data=True,
     cmdclass={
         'install': CustomInstall,
-    }
+        'develop': CustomDevelop,
+    },
+    entry_points={
+        'console_scripts': [
+            'whisk-trace=whisk.bin:trace_main',
+            'whisk-classify=whisk.bin:classify_main',
+            'whisk-measure=whisk.bin:measure_main',
+            'whisk-whisker-convert=whisk.bin:whisker_convert_main',
+            'whisk-measurements-convert=whisk.bin:measurements_convert_main',
+            'whisk-reclassify=whisk.bin:reclassify_main',
+            'whisk-report=whisk.bin:report_main',
+        ],
+    },
 )
 
 # Get a list of all binary files 

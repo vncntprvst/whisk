@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whisk-janelia"
+version = "1.2.0"
+description = "Fully automated tracking of single rows of whiskers in high-speed video."
+readme = "README.md"
+authors = [
+    {name = "Nathan Clack"}
+]
+maintainers = [
+    {name = "clackn"},
+    {name = "cxrodgers"},
+    {name = "mitchclough"},
+    {name = "vncntprvst"},
+]
+license = {file = "LICENSE.txt"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+ffmpeg = ["requests>=2.24,<3"]
+
+[project.urls]
+Homepage = "https://github.com/nclack/whisk/"
+Repository = "https://github.com/vncntprvst/whisk"
+Issues = "https://github.com/nclack/whisk/issues"
+Documentation = "https://wikis.janelia.org/display/WT/Whisker+Tracking"
+
+[project.scripts]
+whisk-trace = "whisk.bin:trace_main"
+whisk-classify = "whisk.bin:classify_main"
+whisk-measure = "whisk.bin:measure_main"
+whisk-whisker-convert = "whisk.bin:whisker_convert_main"
+whisk-measurements-convert = "whisk.bin:measurements_convert_main"
+whisk-reclassify = "whisk.bin:reclassify_main"
+whisk-report = "whisk.bin:report_main"
+
+[tool.setuptools.packages.find]
+exclude = ["whisk.bin.*", "whisk.bin", "pipeline.*", "pipeline", "ui.*", "ui"]
+
+[tool.setuptools.package-data]
+whisk = ["bin/*"]
+
+[tool.setuptools]
+include-package-data = true
