@@ -759,7 +759,7 @@ void kvprintall(tkv *self)
        " */\n"
        "#pragma once\n"
        "#ifndef SHARED_EXPORT\n"
-       "#ifdef _MSC_VER\n"
+       "#if defined(_WIN32)\n"
        "#define SHARED_EXPORT __declspec(dllexport)\n"
        "#else\n"
        "#define SHARED_EXPORT\n"

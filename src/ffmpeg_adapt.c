@@ -117,7 +117,10 @@ void *ffmpeg_video_quit( ffmpeg_video *cur )
   if( cur->pRaw ) av_frame_free( &cur->pRaw );
   if( cur->pDat ) av_frame_free( &cur->pDat );
 
-  if( cur->pCtx ) avcodec_close( cur->pCtx );
+  /* avcodec_close() was deprecated in FFmpeg 4.0 and removed in 8.0.
+   * avcodec_free_context() closes and frees the context (and is available
+   * since FFmpeg 3.1), so it is the portable replacement. */
+  if( cur->pCtx ) avcodec_free_context( &cur->pCtx );
   if( cur->pFormatCtx ) avformat_close_input( &cur->pFormatCtx );
 
   if(cur->data) av_freep(&cur->data[0]);

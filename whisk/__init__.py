@@ -17,7 +17,8 @@ def get_whisk_bin_path():
 def get_trace_executable():
     """Get the full path to the trace executable."""
     bin_path = get_whisk_bin_path()
-    trace_path = bin_path / "trace"
+    exe_name = "trace.exe" if os.name == "nt" else "trace"
+    trace_path = bin_path / exe_name
     if not trace_path.exists():
         raise FileNotFoundError(f"trace executable not found at {trace_path}")
     return str(trace_path)
@@ -46,3 +47,16 @@ if bin_path_str not in os.environ.get('PATH', ''):
         os.environ['PATH'] = bin_path_str + os.pathsep + os.environ['PATH']
     else:
         os.environ['PATH'] = bin_path_str
+
+# On Windows (Python 3.8+), DLL dependencies are no longer resolved from PATH
+# for libraries loaded via ctypes. whisk.dll depends on the bundled ffmpeg DLLs,
+# which live in bin/ (or the bin/ffmpeg_win64_lgpl_shared subfolder). Register
+# those directories so WhiskiWrap can load whisk.dll.
+if os.name == 'nt' and hasattr(os, 'add_dll_directory'):
+    _bin = get_whisk_bin_path()
+    for _dll_dir in (_bin, _bin / "ffmpeg_win64_lgpl_shared"):
+        if _dll_dir.is_dir():
+            try:
+                os.add_dll_directory(str(_dll_dir))
+            except OSError:
+                pass

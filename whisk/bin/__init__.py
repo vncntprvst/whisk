@@ -16,7 +16,14 @@ def run_executable(exe_name, args=None):
     """Run a whisk executable with given arguments."""
     bin_path = get_bin_path()
     exe_path = bin_path / exe_name
-    
+
+    # On Windows the native binaries carry a .exe suffix; the extensionless
+    # files in bin/ are the Linux builds and would raise WinError 193.
+    if os.name == 'nt' and not exe_path.suffix:
+        win_exe = bin_path / (exe_name + '.exe')
+        if win_exe.exists():
+            exe_path = win_exe
+
     if not exe_path.exists():
         raise FileNotFoundError(f"Executable '{exe_name}' not found in {bin_path}")
     

@@ -9,7 +9,12 @@
  */
 #pragma once
 #ifndef SHARED_EXPORT
-#ifdef _MSC_VER
+#if defined(_WIN32)
+/* Export on any Windows compiler, not just MSVC. Under MinGW/GCC the previous
+ * _MSC_VER-only guard left SHARED_EXPORT empty, so Params()/Load_Params_File()
+ * were not exported from whisk.dll (GNU ld disables auto export-all once any
+ * __declspec(dllexport) is present elsewhere), breaking the ctypes binding in
+ * WhiskiWrap. This matches the unconditional dllexport in include/compat.h. */
 #define SHARED_EXPORT __declspec(dllexport)
 #else
 #define SHARED_EXPORT

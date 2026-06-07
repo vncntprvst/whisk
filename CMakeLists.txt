@@ -16,9 +16,17 @@ macro(show v)
   message("${v} is ${${v}}")
 endmacro()
 
-# Adding the -fPIC flag, to ensure that the object files are compiled as position-independent code, which is required for shared library creation. 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC") 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC") 
+# Adding the -fPIC flag, to ensure that the object files are compiled as position-independent code, which is required for shared library creation.
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
+# GCC 14+ promotes several legacy-C constructs (implicit function/int
+# declarations, incompatible/discarded pointer qualifiers) to hard errors.
+# This codebase predates that convention; demote them back to warnings so it
+# still builds with modern GCC (e.g. MinGW/MSYS2 gcc 14+). No effect on MSVC.
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-error=discarded-qualifiers")
+endif()
 
 show(CMAKE_C_FLAGS)
 #show(CMAKE_SHARED_LIBRARY_C_FLAGS)
@@ -354,44 +362,53 @@ set(HMM
 source_group("Source Files\\" FILES ${HMM_SRCS})
 source_group("Header Files\\" FILES ${HMM_HDRS})
 
-# QTUI
-SET(QTLIBLIST
-  Widgets
-  Gui
-  Core
-  OpenGL
-  Svg
-)
-
-find_package(Qt5 COMPONENTS ${QTLIBLIST} REQUIRED)
+# QTUI (optional). The Qt GUI (whiski) is not needed for the command-line
+# tools or the python/ctypes libraries, so it is opt-in. This lets the core
+# build (trace/measure/classify + whisk.dll) succeed without a Qt5 install.
+option(BUILD_GUI "Build the Qt5 whiski GUI" OFF)
 
 set(QTUI_HDRS)
 set(QTUI_SRCS)
 set(QTUI_SUBDIR qtui)
+set(MOC_SRCS)
+set(RCC_SRCS)
 
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+if(BUILD_GUI)
+  SET(QTLIBLIST
+    Widgets
+    Gui
+    Core
+    OpenGL
+    Svg
+  )
 
-include_directories(${Qt5_INCLUDE_DIRS})
-file(GLOB QTUI_HDRS ${CMAKE_SOURCE_DIR}/${QTUI_SUBDIR}/*.h)
-file(GLOB QTUI_SRCS ${CMAKE_SOURCE_DIR}/${QTUI_SUBDIR}/*.cpp)
-source_group("Source Files\\ui" FILES ${QTUI_SRCS})
-source_group("Header Files\\ui" FILES ${QTUI_HDRS})
+  find_package(Qt5 COMPONENTS ${QTLIBLIST} REQUIRED)
+  set(QT_FOUND ${Qt5_FOUND})
 
-qt5_wrap_cpp(MOC_SRCS
-  qtui/MainWindow.h
-  qtui/Editor.h
-  qtui/Data.h
-  qtui/Curve.h
-  qtui/FaceIndicator.h
-)
+  set(CMAKE_AUTOMOC ON)
+  set(CMAKE_AUTORCC ON)
 
-qt5_add_resources(RCC_SRCS qtui/qtui.qrc)
+  include_directories(${Qt5_INCLUDE_DIRS})
+  file(GLOB QTUI_HDRS ${CMAKE_SOURCE_DIR}/${QTUI_SUBDIR}/*.h)
+  file(GLOB QTUI_SRCS ${CMAKE_SOURCE_DIR}/${QTUI_SUBDIR}/*.cpp)
+  source_group("Source Files\\ui" FILES ${QTUI_SRCS})
+  source_group("Header Files\\ui" FILES ${QTUI_HDRS})
 
-source_group("Source Files\\Qt Generated" FILES
-  ${MOC_SRCS}
-  ${RCC_SRCS}
-)
+  qt5_wrap_cpp(MOC_SRCS
+    qtui/MainWindow.h
+    qtui/Editor.h
+    qtui/Data.h
+    qtui/Curve.h
+    qtui/FaceIndicator.h
+  )
+
+  qt5_add_resources(RCC_SRCS qtui/qtui.qrc)
+
+  source_group("Source Files\\Qt Generated" FILES
+    ${MOC_SRCS}
+    ${RCC_SRCS}
+  )
+endif()
 
 
 ###########

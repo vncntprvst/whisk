@@ -81,10 +81,15 @@ For development or custom builds, you can build from source using modern Python 
 
 ### Prerequisites
 
-- CMake 2.8+
-- C++ compiler (gcc 12.2+ recommended)
-- FFmpeg libraries
-- Python 3.7+
+- CMake 3.15+
+- C/C++ compiler (gcc 12+ works, including gcc 14/16; MSVC also supported)
+- FFmpeg development libraries (the binaries are currently built against FFmpeg 8.x)
+- Python 3.8+
+
+The Qt5 GUI and the MATLAB MEX bindings are **optional and off by default**:
+the GUI builds only with `-DBUILD_GUI=ON` (requires Qt5), and the MATLAB targets
+require a MATLAB installation. The instructions below build the core
+command-line tools and the `whisk` / `whiskio` / `traj` shared libraries.
 
 ### Quick Build
 
@@ -154,27 +159,36 @@ If CMake cannot find FFmpeg libraries, you may need to:
 
 **Windows Build Instructions:**
 
-For Windows systems using MSYS2/MinGW:  
+Windows builds use MSYS2/MinGW (a native MinGW build is produced — no WSL or
+container required).
 
-1. Install [MSYS2](https://www.msys2.org/) and set up the development environment
-2. Install required packages in MSYS2 terminal:
+1. Install [MSYS2](https://www.msys2.org/).
+2. In the MSYS2 terminal, install the toolchain and FFmpeg:
 
 ```bash
-pacman -S mingw-w64-ucrt-x86_64-gcc
 pacman -S --needed base-devel mingw-w64-x86_64-toolchain
-pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-ffmpeg
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-ffmpeg
 ```
 
-3. Build the project:
+3. Configure and build the core targets from the MinGW64 environment (skip the
+   MATLAB MEX targets, which require MATLAB; the Qt GUI stays off):
 
 ```bash
-mkdir build
-cd build
-cmake ..
-ninja
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
+ninja -C build whisk traj whiskio trace measure classify classify_radial reclassify report whisker_convert measurements_convert
 ```
 
-For detailed Windows setup instructions, see the [full documentation](https://github.com/vncntprvst/whisk/).
+4. Stage the binaries for the Python package: copy the built `*.dll` / `*.exe`
+   from `build/` into `whisk/bin/`, along with the FFmpeg and MinGW runtime DLLs
+   they depend on (resolve them with `ldd build/whisk.dll` etc. and copy the
+   `/mingw64/bin/*.dll` dependencies). These bundled DLLs must match the FFmpeg
+   major version the binaries were built against (see `whisk/whisk_utils.py`,
+   `FFMPEG_DLL_RELEASE`).
+
+> Note: under MinGW the public API is exported via `__declspec(dllexport)` on
+> `_WIN32` (see `include/compat.h` and `src/generated/parameters/param.h`), so
+> `whisk.dll` exports the symbols WhiskiWrap binds through ctypes (e.g.
+> `Load_Params_File`). GCC 14+ legacy-C warnings are demoted in `CMakeLists.txt`.
 
 
 File formats
