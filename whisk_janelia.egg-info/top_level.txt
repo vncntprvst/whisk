@@ -8,6 +8,4 @@ python
 qtui
 scripts
 src
-test_include
-tests
 whisk
