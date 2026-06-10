@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-__version__ = "1.1.10"
+__version__ = "1.2.4"
 __author__ = "Nathan Clack"
 
 def get_whisk_bin_path():
@@ -40,6 +40,17 @@ def ensure_executable_permissions():
 # Ensure executables have proper permissions on import
 ensure_executable_permissions()
 
+# Make sure the matching FFmpeg shared libraries are present. Wheel installs
+# don't run setup.py's post-install hook, so without this the libs would be
+# missing and the binaries would fail to load. This auto-downloads them on first
+# import if absent (best-effort, silent on success; disable with
+# WHISK_SKIP_FFMPEG_DOWNLOAD=1).
+try:
+    from . import whisk_utils as _whisk_utils
+    _whisk_utils.ensure_ffmpeg_dlls(str(get_whisk_bin_path()))
+except Exception:
+    pass
+
 # Add bin directory to PATH if not already there
 bin_path_str = str(get_whisk_bin_path())
 if bin_path_str not in os.environ.get('PATH', ''):
@@ -47,6 +58,14 @@ if bin_path_str not in os.environ.get('PATH', ''):
         os.environ['PATH'] = bin_path_str + os.pathsep + os.environ['PATH']
     else:
         os.environ['PATH'] = bin_path_str
+
+# On Linux the dynamic loader uses LD_LIBRARY_PATH (not PATH); make sure child
+# processes (the whisk binaries) can find the bundled ffmpeg .so in bin/.
+if os.name == 'posix':
+    _ld = os.environ.get('LD_LIBRARY_PATH', '')
+    if bin_path_str not in _ld.split(os.pathsep):
+        os.environ['LD_LIBRARY_PATH'] = (
+            bin_path_str + os.pathsep + _ld) if _ld else bin_path_str
 
 # On Windows (Python 3.8+), DLL dependencies are no longer resolved from PATH
 # for libraries loaded via ctypes. whisk.dll depends on the bundled ffmpeg DLLs,

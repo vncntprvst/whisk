@@ -1,4 +1,5 @@
 3rdParty
+build
 dist
 docs
 include

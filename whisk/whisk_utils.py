@@ -1,7 +1,7 @@
-import requests
 import os
 import zipfile
 import tarfile
+import warnings
 from io import BytesIO
 import shutil
 
@@ -13,11 +13,63 @@ import shutil
 #   - Linux .so:         built against FFmpeg 6.x (libavcodec.so.60, ...)
 # Each entry maps to a GitHub release holding the matching lgpl-shared archive.
 # When a platform's binaries are rebuilt against a different FFmpeg major, bump
-# its tag here and upload the matching archive to that release.
+# its tag here (AND the matching probe below) and upload the matching archive.
 FFMPEG_DLL_RELEASE = {
     "nt": "ffmpeg_8.0_dlls",
     "posix": "ffmpeg_6.0_dlls",
 }
+
+# A marker shared-library, one per OS, used to detect whether the matching
+# FFmpeg libs are already present so we don't re-download. Keep the major in
+# sync with FFMPEG_DLL_RELEASE above (Windows FFmpeg 8 -> 62; Linux FFmpeg 6 -> 60).
+FFMPEG_PROBE = {
+    "nt": "avcodec-62.dll",
+    "posix": "libavcodec.so.60",
+}
+
+# Set this env var (to any non-empty value) to disable the on-import auto-download.
+SKIP_DOWNLOAD_ENV = "WHISK_SKIP_FFMPEG_DOWNLOAD"
+
+
+def ffmpeg_dlls_present(bin_dir):
+    """True if the matching FFmpeg marker library is already in ``bin_dir``.
+
+    Checks ``bin_dir`` and its immediate ``ffmpeg_*_lgpl_shared`` subdir so both
+    the flat layout (used here) and the setup.py subfolder layout are recognised.
+    """
+    probe = FFMPEG_PROBE.get(os.name)
+    if probe is None:
+        return True  # unknown OS: never block import on a download we can't do
+    candidates = [bin_dir,
+                  os.path.join(bin_dir, "ffmpeg_win64_lgpl_shared"),
+                  os.path.join(bin_dir, "ffmpeg_linux64_lgpl_shared")]
+    return any(os.path.isfile(os.path.join(d, probe)) for d in candidates)
+
+
+def ensure_ffmpeg_dlls(bin_dir, *, force=False):
+    """Best-effort: download the matching FFmpeg libs into ``bin_dir`` if missing.
+
+    Returns True if the libs are present afterwards. Never raises: a failed or
+    skipped download warns and returns False so ``import whisk`` still succeeds.
+    Disable entirely with the ``WHISK_SKIP_FFMPEG_DOWNLOAD`` env var.
+    """
+    if not force and ffmpeg_dlls_present(bin_dir):
+        return True
+    if os.environ.get(SKIP_DOWNLOAD_ENV):
+        return ffmpeg_dlls_present(bin_dir)
+    try:
+        download_and_extract_ffmpeg_dlls(destination_dir=bin_dir)
+    except Exception as exc:  # network down, no requests, unsupported OS, ...
+        warnings.warn(
+            f"whisk: could not auto-download FFmpeg shared libraries ({exc}). "
+            f"whisk binaries will fail to load until the matching FFmpeg "
+            f"{'8.x' if os.name == 'nt' else '6.x'} libs are on the library path. "
+            f"Fix: install with the [ffmpeg] extra from source, or call "
+            f"whisk.whisk_utils.download_and_extract_ffmpeg_dlls(). "
+            f"Set {SKIP_DOWNLOAD_ENV}=1 to silence this.")
+        return False
+    return ffmpeg_dlls_present(bin_dir)
+
 
 def download_and_extract_ffmpeg_dlls(destination_dir=None):
     """
@@ -29,6 +81,11 @@ def download_and_extract_ffmpeg_dlls(destination_dir=None):
     Args:
         destination_dir (str): The directory where the DLLs should be extracted.
     """
+    # requests is an optional ([ffmpeg]) dependency, so import it lazily here
+    # rather than at module import — that keeps plain ``import whisk`` working
+    # even when requests is not installed.
+    import requests
+
     # FFmpeg DLLs download link (per-OS release tag must match this OS's binaries)
     try:
         release = FFMPEG_DLL_RELEASE[os.name]
