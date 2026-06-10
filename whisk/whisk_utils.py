@@ -5,12 +5,19 @@ import tarfile
 from io import BytesIO
 import shutil
 
-# The prebuilt whisk binaries are now compiled against FFmpeg 8.x (avcodec-62,
-# avformat-62, avutil-60, swscale-9, swresample-6, avdevice-62, avfilter-11).
-# The auto-downloaded DLLs MUST match this major version or whisk.dll / trace
-# will fail to load. Bump this tag whenever the binaries are rebuilt against a
-# different FFmpeg release, and upload matching archives to that GitHub release.
-FFMPEG_DLL_RELEASE = "ffmpeg_8.0_dlls"
+# The prebuilt whisk binaries link against different FFmpeg major versions per
+# platform, so the auto-downloaded shared libraries MUST match the binary on
+# THIS OS or whisk.dll / libwhisk.so / trace will fail to load:
+#   - Windows .exe/.dll: built against FFmpeg 8.x (avcodec-62, avformat-62,
+#     avutil-60, swscale-9, swresample-6, avdevice-62, avfilter-11)
+#   - Linux .so:         built against FFmpeg 6.x (libavcodec.so.60, ...)
+# Each entry maps to a GitHub release holding the matching lgpl-shared archive.
+# When a platform's binaries are rebuilt against a different FFmpeg major, bump
+# its tag here and upload the matching archive to that release.
+FFMPEG_DLL_RELEASE = {
+    "nt": "ffmpeg_8.0_dlls",
+    "posix": "ffmpeg_6.0_dlls",
+}
 
 def download_and_extract_ffmpeg_dlls(destination_dir=None):
     """
@@ -22,8 +29,12 @@ def download_and_extract_ffmpeg_dlls(destination_dir=None):
     Args:
         destination_dir (str): The directory where the DLLs should be extracted.
     """
-    # FFmpeg DLLs download link
-    base = f"https://github.com/vncntprvst/whisk/releases/download/{FFMPEG_DLL_RELEASE}"
+    # FFmpeg DLLs download link (per-OS release tag must match this OS's binaries)
+    try:
+        release = FFMPEG_DLL_RELEASE[os.name]
+    except KeyError:
+        raise NotImplementedError(f"OS {os.name} not supported.")
+    base = f"https://github.com/vncntprvst/whisk/releases/download/{release}"
     if os.name == 'posix':
         url = f"{base}/ffmpeg_linux64_lgpl_shared.tar.xz"
     elif os.name == 'nt':
