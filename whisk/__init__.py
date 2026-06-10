@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-__version__ = "1.2.4"
+__version__ = "1.2.5"
 __author__ = "Nathan Clack"
 
 def get_whisk_bin_path():
@@ -48,6 +48,9 @@ ensure_executable_permissions()
 try:
     from . import whisk_utils as _whisk_utils
     _whisk_utils.ensure_ffmpeg_dlls(str(get_whisk_bin_path()))
+    # Linux: preload the bundled ffmpeg libs so a later ctypes load of
+    # libwhisk.so (e.g. by WhiskiWrap) resolves its NEEDED libav* from bin/.
+    _whisk_utils.preload_bundled_ffmpeg(str(get_whisk_bin_path()))
 except Exception:
     pass
 

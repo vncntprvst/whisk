@@ -71,6 +71,38 @@ def ensure_ffmpeg_dlls(bin_dir, *, force=False):
     return ffmpeg_dlls_present(bin_dir)
 
 
+def preload_bundled_ffmpeg(bin_dir):
+    """Preload the bundled FFmpeg shared libraries into the global namespace (Linux).
+
+    The Linux whisk .so are not built with an ``$ORIGIN`` rpath, and a runtime
+    ``LD_LIBRARY_PATH`` edit does not affect the already-running interpreter's
+    loader. So when WhiskiWrap later does ``ctypes.CDLL("libwhisk.so")`` the
+    loader can't find its NEEDED ``libav*`` in ``bin/``. Loading them here first
+    with ``RTLD_GLOBAL`` puts them in the process by soname, so the subsequent
+    ``libwhisk.so`` load reuses them. No-op on Windows (``add_dll_directory``
+    covers that) and silent if the libs are absent or already satisfied.
+    """
+    if os.name != "posix":
+        return
+    import ctypes
+    import glob
+    # versioned ffmpeg sonames only (e.g. libavcodec.so.60); the bare lib*.so
+    # symlinks and libwhisk.so itself end in ".so" and are skipped by the glob.
+    libs = [p for p in glob.glob(os.path.join(bin_dir, "lib*.so.*"))
+            if os.path.basename(p).startswith(("libav", "libsw"))]
+    # retry passes so interdependencies resolve regardless of load order
+    for _ in range(len(libs)):
+        remaining = []
+        for p in libs:
+            try:
+                ctypes.CDLL(p, mode=ctypes.RTLD_GLOBAL)
+            except OSError:
+                remaining.append(p)
+        if not remaining or remaining == libs:
+            break
+        libs = remaining
+
+
 def download_and_extract_ffmpeg_dlls(destination_dir=None):
     """
     Downloads and extracts the FFmpeg DLLs from the GitHub releases page.
