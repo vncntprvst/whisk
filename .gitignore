@@ -19,5 +19,11 @@ xcode
 dist/
 
 # Ignore the ffmpeg dll archives
-whisk/bin/ffmpeg_win64_lgpl_shared.zip
-whisk/bin/ffmpeg_linux64_lgpl_shared.tar.xz
+ffmpeg_win64_lgpl_shared.zip
+ffmpeg_linux64_lgpl_shared.tar.xz
+
+# Ignore the extracted ffmpeg/runtime DLLs; keep the project's own tracked DLLs
+whisk/bin/*.dll
+!whisk/bin/whisk.dll
+!whisk/bin/whiskio.dll
+!whisk/bin/traj.dll
